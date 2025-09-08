@@ -15,7 +15,7 @@ class Usuario(db.Model, UserMixin):
     nombre_completo = db.Column(db.String(200), nullable=False)
     rol = db.Column(db.String(50), default='forense')
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
-    
+    camara_ip = db.Column(db.Text)
     # Relación con análisis
     analisis = db.relationship('Analisis', backref='usuario', lazy=True)
     

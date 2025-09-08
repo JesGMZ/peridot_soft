@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, session, url_for, jsonify, request, Response, current_app
+from flask import Blueprint, flash, render_template, redirect, session, url_for, jsonify, request, Response, current_app
 from flask_login import login_required, current_user, login_user, logout_user
 from backend import db, login_manager
 from backend.models import Usuario, Analisis, Evidencia
@@ -222,20 +222,27 @@ def eliminar_analisis(analisis_id):
 @bp.route('/configurar_camara', methods=['POST'])
 @login_required
 def configurar_camara():
-    camera_ip = request.form.get('camera_ip')
-    if camera_ip:
-        # Guardar en la sesión de este usuario
-        session['camera_ip'] = camera_ip.strip()
-    # Siempre volvemos al dashboard
-    return redirect(url_for('main.dashboard'))
+    nueva_ip = request.form.get("camera_ip")
+
+    if not nueva_ip:
+        flash("Debe ingresar una dirección IP válida.", "danger")
+        return redirect(url_for("main.dashboard"))
+
+    # Guardar en el usuario actual
+    current_user.camara_ip = nueva_ip
+    db.session.commit()
+
+    flash(f"Dirección IP de la cámara configurada: {nueva_ip}", "success")
+    return redirect(url_for("main.dashboard"))
+
 
 
 def get_user_camera_url():
-    ip = session.get('camera_ip')
-    if ip:
-        return f"http://{ip}:8080/video"
-    # fallback por defecto
+    if current_user.is_authenticated and current_user.camara_ip:
+        return f"http://{current_user.camara_ip}:8080/video"
+    # fallback por defecto si no hay IP guardada
     return "http://192.168.1.34:8080/video"
+
 
 
 @bp.route('/analisis/<int:analisis_id>')

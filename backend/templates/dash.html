@@ -481,26 +481,47 @@
         </form>
       </div>
 
-            <!-- Device Connection -->
-      <div class="card config-card">
-        <h3 class="config-title">
-          <i class="fas fa-network-wired"></i>
-          Conexión Dispositivo
-        </h3>
+<!-- Device Connection -->
+<div class="card config-card">
+  <h3 class="config-title">
+    <i class="fas fa-network-wired"></i>
+    Conexión Dispositivo
+  </h3>
 
-        <form method="POST" action="{{ url_for('main.configurar_camara') }}">
-          <div class="form-group">
-            <label for="ip-address" class="form-label">Dirección IP</label>
-            <input type="text" id="ip-address" name="camera_ip" class="form-control" 
-                  placeholder="Ej: 192.168.1.100" required>
-          </div>
-          
-          <button type="submit" class="btn btn-success">
-            <i class="fas fa-link me-2"></i>
-            Conectar
-          </button>
-        </form>
-      </div>
+  <!-- Mensajes flash -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <form method="POST" action="{{ url_for('main.configurar_camara') }}">
+    <div class="form-group">
+      <label for="ip-address" class="form-label">Dirección IP</label>
+      <input type="text" id="ip-address" name="camera_ip" class="form-control" 
+             placeholder="Ej: 192.168.1.100"
+             value="{{ current_user.camara_ip or '' }}" required>
+    </div>
+
+    {% if current_user.camara_ip %}
+      <button type="submit" class="btn btn-warning mt-2">
+        <i class="fas fa-sync-alt me-2"></i>
+        Actualizar IP
+      </button>
+    {% else %}
+      <button type="submit" class="btn btn-success mt-2">
+        <i class="fas fa-link me-2"></i>
+        Conectar
+      </button>
+    {% endif %}
+  </form>
+</div>
+
 
     </div>
   </section>
