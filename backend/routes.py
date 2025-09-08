@@ -263,7 +263,7 @@ def generate_stream(camera_url):
 @bp.route('/stream')
 def stream():
     # Obtener la URL de la cámara desde la configuración dentro del contexto
-    camera_url = current_app.config.get('CAMERA_STREAM_URL', 'http://192.168.1.35:8080/video')
+    camera_url = current_app.config.get('CAMERA_STREAM_URL', 'http://192.168.1.34:8080/video')
     return Response(generate_stream(camera_url), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 @bp.route('/capturar')
