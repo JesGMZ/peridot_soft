@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, jsonify, request, Response, current_app
+from flask import Blueprint, render_template, redirect, session, url_for, jsonify, request, Response, current_app
 from flask_login import login_required, current_user, login_user, logout_user
 from backend import db, login_manager
 from backend.models import Usuario, Analisis, Evidencia
@@ -219,6 +219,25 @@ def eliminar_analisis(analisis_id):
 
     return redirect(url_for('main.registros'))
 
+@bp.route('/configurar_camara', methods=['POST'])
+@login_required
+def configurar_camara():
+    camera_ip = request.form.get('camera_ip')
+    if camera_ip:
+        # Guardar en la sesión de este usuario
+        session['camera_ip'] = camera_ip.strip()
+    # Siempre volvemos al dashboard
+    return redirect(url_for('main.dashboard'))
+
+
+def get_user_camera_url():
+    ip = session.get('camera_ip')
+    if ip:
+        return f"http://{ip}:8080/video"
+    # fallback por defecto
+    return "http://192.168.1.34:8080/video"
+
+
 @bp.route('/analisis/<int:analisis_id>')
 @login_required
 def ver_analisis(analisis_id):
@@ -249,6 +268,7 @@ def reset():
     return redirect(url_for('main.index'))
 
 # MJPEG Stream Generator
+# --- Generador de stream ---
 def generate_stream(camera_url):
     cap = cv2.VideoCapture(camera_url)
     while True:
@@ -257,21 +277,27 @@ def generate_stream(camera_url):
             break
         _, buffer = cv2.imencode('.jpg', frame)
         frame_bytes = buffer.tobytes()
-        yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
     cap.release()
 
-@bp.route('/stream')
-def stream():
-    # Obtener la URL de la cámara desde la configuración dentro del contexto
-    camera_url = current_app.config.get('CAMERA_STREAM_URL', 'http://192.168.1.34:8080/video')
-    return Response(generate_stream(camera_url), mimetype='multipart/x-mixed-replace; boundary=frame')
 
+# --- Ruta de streaming ---
+@bp.route('/stream')
+@login_required
+def stream():
+    camera_url = get_user_camera_url()
+    return Response(generate_stream(camera_url),
+                    mimetype='multipart/x-mixed-replace; boundary=frame')
+
+
+# --- Ruta de captura ---
 @bp.route('/capturar')
 @login_required
 def capturar():
     global captured_image, result_image_data, result_points, result_analysis_text
 
-    cap = cv2.VideoCapture(current_app.config['CAMERA_STREAM_URL'])
+    cap = cv2.VideoCapture(get_user_camera_url())
     ret, frame = cap.read()
     cap.release()
 
