@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Registro - Sistema Forense</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- FontAwesome -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --primary: #2563eb;
+      --secondary: #64748b;
+      --light: #f8fafc;
+      --dark: #1e293b;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--light);
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: url('{{ url_for("static", filename="img/fondo_evidencias.jpg") }}') center/cover no-repeat;
+      opacity: 0.2;
+      z-index: -1;
+    }
+
+    .register-container {
+      display: flex;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+      overflow: hidden;
+      max-width: 1000px;
+      width: 100%;
+      position: relative;
+      z-index: 1;
+    }
+
+    .register-image {
+      flex: 1;
+      background: url('{{ url_for("static", filename="img/login-forense.jpg") }}') center/cover no-repeat;
+      position: relative;
+    }
+
+    .register-image::after {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.4);
+    }
+
+    .register-image .overlay-text {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      color: white;
+      z-index: 2;
+    }
+
+    .overlay-text h2 {
+      font-weight: 700;
+    }
+
+    .register-form {
+      flex: 1.2;
+      padding: 3rem;
+    }
+
+    .register-form h3 {
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      color: var(--dark);
+    }
+
+    .form-control, .form-select {
+      border-radius: 12px;
+      padding: 0.75rem 1rem;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      border: none;
+      border-radius: 12px;
+      padding: 0.75rem;
+      font-weight: 600;
+    }
+
+    .btn-primary:hover {
+      background: #1d4ed8;
+    }
+
+    .text-muted a {
+      text-decoration: none;
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    .text-muted a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 768px) {
+      .register-container {
+        flex-direction: column;
+      }
+      .register-image {
+        height: 200px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="register-container">
+    <!-- Imagen izquierda -->
+    <div class="register-image">
+      <div class="overlay-text">
+        <h2>PERIDOT</h2>
+        <p>Sistema Avanzado de Análisis Forense</p>
+      </div>
+    </div>
+
+    <!-- Formulario -->
+    <div class="register-form">
+      <h3><i class="fas fa-user-plus me-2"></i> Registro de usuario</h3>
+      <p class="text-secondary">Completa los siguientes datos para crear tu cuenta</p>
+
+      <!-- Mensajes flash -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" action="{{ url_for('auth.register') }}">
+        <div class="mb-3">
+          <label class="form-label">Usuario</label>
+          <input type="text" class="form-control" name="username" required>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Nombre completo</label>
+          <input type="text" class="form-control" name="nombre_completo" required>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Contraseña</label>
+          <input type="password" class="form-control" name="password" required>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Confirmar contraseña</label>
+          <input type="password" class="form-control" name="confirm_password" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100">
+          <i class="fas fa-user-check me-2"></i> Registrarse
+        </button>
+      </form>
+
+      <p class="text-center text-muted mt-4">
+        ¿Ya tienes cuenta? <a href="{{ url_for('auth.login') }}">Inicia sesión</a>
+      </p>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

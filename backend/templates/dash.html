@@ -1,0 +1,626 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - PERIDOT Sistema Forense{% endblock %}
+
+{% block head %}
+  <!-- Fuente y librerías adicionales -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='base.css') }}">
+
+  <style>
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+      text-align: center;
+      padding: 1.5rem;
+      border-radius: 12px;
+      border: none;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+    }
+    
+    .stat-icon {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      color: #3B82F6;
+    }
+    
+    .stat-value {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: #1F2937;
+      margin-bottom: 0.5rem;
+    }
+    
+    .stat-label {
+      color: #6B7280;
+      font-weight: 500;
+      margin: 0;
+    }
+    
+    .carousel-section {
+      margin: 2rem 0;
+    }
+    
+    .carousel-container {
+      position: relative;
+      width: 100%;
+      max-width: 100%;
+      margin: 0 auto;
+      overflow: hidden;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+      background: #f8f9fa; /* Fondo por si las imágenes no cargan */
+    }
+    
+    .carousel {
+      display: flex;
+      transition: transform 0.5s ease-in-out;
+      height: 400px;
+    }
+    
+    .carousel-item {
+      min-width: 100%;
+      height: 100%;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #3B82F6, #1D4ED8);
+    }
+    
+    .carousel-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .carousel-caption {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+      color: white;
+      padding: 1.5rem;
+    }
+    
+    .carousel-caption h3 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+    
+    .carousel-caption p {
+      font-size: 1rem;
+      margin-bottom: 0;
+      opacity: 0.9;
+    }
+    
+    .carousel-control {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      color: white;
+      font-size: 1.5rem;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      z-index: 10;
+    }
+    
+    .carousel-control:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+    
+    .carousel-control.prev {
+      left: 15px;
+    }
+    
+    .carousel-control.next {
+      right: 15px;
+    }
+    
+    .carousel-indicators {
+      position: absolute;
+      bottom: 15px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+      z-index: 10;
+    }
+    
+    .carousel-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.5);
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    
+    .carousel-indicator.active {
+      background: white;
+    }
+    
+    .fallback-content {
+      text-align: center;
+      color: white;
+      padding: 2rem;
+      display: none; /* Oculto por defecto */
+    }
+    
+    .fallback-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+    
+    .config-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+    
+    .config-card {
+      padding: 1.5rem;
+      border-radius: 12px;
+      border: none;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .config-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      color: #1F2937;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .form-group {
+      margin-bottom: 1rem;
+    }
+    
+    .form-label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: #374151;
+    }
+    
+    .form-control {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #D1D5DB;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+    
+    .form-control:focus {
+      outline: none;
+      border-color: #3B82F6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    .content-header {
+      margin-bottom: 2rem;
+    }
+    
+    .content-title {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: #1F2937;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .activity-section {
+      margin: 2rem 0;
+    }
+    
+    .table-responsive {
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    
+    .table th {
+      background-color: #F9FAFB;
+      font-weight: 600;
+      color: #374151;
+      border-bottom: 2px solid #E5E7EB;
+    }
+    
+    .badge {
+      font-size: 0.75rem;
+      padding: 0.35em 0.65em;
+      border-radius: 6px;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <!-- Dashboard Header -->
+  <div class="content-header">
+    <h1 class="content-title">
+      <i class="fas fa-chart-line"></i>
+      Dashboard Forense
+    </h1>
+    <p class="text-muted">Resumen general del sistema de análisis forense</p>
+  </div>
+
+  <!-- Statistics Section -->
+  <section class="stats-section">
+    <div class="stats-grid">
+      <div class="card stat-card">
+        <i class="fas fa-box-archive stat-icon"></i>
+        <div class="stat-value">{{ total_analisis }}</div>
+        <p class="stat-label">Análisis Totales</p>
+      </div>
+      <div class="card stat-card">
+        <i class="fas fa-microscope stat-icon"></i>
+        <div class="stat-value">{{ total_evidencias }}</div>
+        <p class="stat-label">Evidencias Detectadas</p>
+      </div>
+      <div class="card stat-card">
+        <i class="fas fa-history stat-icon"></i>
+        <div class="stat-value">{{ ultimos_analisis|length }}</div>
+        <p class="stat-label">Análisis Recientes</p>
+      </div>
+      <div class="card stat-card">
+        <i class="fas fa-user stat-icon"></i>
+        <div class="stat-value">1</div>
+        <p class="stat-label">Analista Activo</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Image Carousel Section -->
+  <section class="carousel-section">
+    <div class="content-header">
+      <h2 class="content-title">
+      </h2>
+      <p class="text-muted">Características principales del sistema forense inteligente</p>
+    </div>
+    
+    <div class="carousel-container">
+      <div class="carousel">
+        <!-- Slide 1: IoT Integration -->
+        <div class="carousel-item">
+          <img src="{{ url_for('static', filename='img/iot-integration.png') }}" alt="IoT Integration" class="carousel-image" onerror="handleImageError(this)">
+          <div class="fallback-content">
+            <i class="fas fa-network-wired fallback-icon"></i>
+            <h3>Integración IoT Avanzada</h3>
+            <p>Conectividad con múltiples dispositivos IoT para recolección de evidencia digital</p>
+          </div>
+          <div class="carousel-caption">
+            <h3>Integración IoT Avanzada</h3>
+            <p>Conectividad con múltiples dispositivos IoT para recolección de evidencia digital en tiempo real</p>
+          </div>
+        </div>
+        
+        <!-- Slide 2: AI Analysis -->
+        <div class="carousel-item">
+          <img src="{{ url_for('static', filename='img/ai-analysis.jpeg') }}" alt="AI Analysis" class="carousel-image" onerror="handleImageError(this)">
+          <div class="fallback-content">
+            <i class="fas fa-brain fallback-icon"></i>
+            <h3>Análisis Inteligente con IA</h3>
+            <p>Algoritmos de inteligencia artificial para detección automática de patrones</p>
+          </div>
+          <div class="carousel-caption">
+            <h3>Análisis Inteligente con IA</h3>
+            <p>Algoritmos de inteligencia artificial para detección automática de patrones y anomalías</p>
+          </div>
+        </div>
+        
+        <!-- Slide 3: Evidence Visualization -->
+        <div class="carousel-item">
+          <img src="{{ url_for('static', filename='img/evidence-viz.jpg') }}" alt="Evidence Visualization" class="carousel-image" onerror="handleImageError(this)">
+          <div class="fallback-content">
+            <i class="fas fa-chart-bar fallback-icon"></i>
+            <h3>Visualización de Evidencias</h3>
+            <p>Interfaces intuitivas para explorar y analizar evidencias recolectadas</p>
+          </div>
+          <div class="carousel-caption">
+            <h3>Visualización de Evidencias</h3>
+            <p>Interfaces intuitivas para explorar y analizar evidencias recolectadas por dispositivos IoT</p>
+          </div>
+        </div>
+        
+        <!-- Slide 4: Real-time Monitoring -->
+        <div class="carousel-item">
+          <img src="{{ url_for('static', filename='img/real-time.jpg') }}" alt="Real-time Monitoring" class="carousel-image" onerror="handleImageError(this)">
+          <div class="fallback-content">
+            <i class="fas fa-desktop fallback-icon"></i>
+            <h3>Monitoreo en Tiempo Real</h3>
+            <p>Seguimiento continuo de dispositivos conectados y análisis de datos</p>
+          </div>
+          <div class="carousel-caption">
+            <h3>Monitoreo en Tiempo Real</h3>
+            <p>Seguimiento continuo de dispositivos conectados y análisis de flujos de datos forenses</p>
+          </div>
+        </div>
+        
+        <!-- Slide 5: Data Processing -->
+        <div class="carousel-item">
+          <img src="{{ url_for('static', filename='img/data-processing.jpg') }}" alt="Data Processing" class="carousel-image" onerror="handleImageError(this)">
+          <div class="fallback-content">
+            <i class="fas fa-server fallback-icon"></i>
+            <h3>Procesamiento de Datos Masivos</h3>
+            <p>Capacidad para analizar grandes volúmenes de información</p>
+          </div>
+          <div class="carousel-caption">
+            <h3>Procesamiento de Datos Masivos</h3>
+            <p>Capacidad para analizar grandes volúmenes de información proveniente de sensores IoT</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Carousel Controls -->
+      <button class="carousel-control prev">
+        <i class="fas fa-chevron-left"></i>
+      </button>
+      <button class="carousel-control next">
+        <i class="fas fa-chevron-right"></i>
+      </button>
+      
+      <!-- Carousel Indicators -->
+      <div class="carousel-indicators">
+        <div class="carousel-indicator active" data-index="0"></div>
+        <div class="carousel-indicator" data-index="1"></div>
+        <div class="carousel-indicator" data-index="2"></div>
+        <div class="carousel-indicator" data-index="3"></div>
+        <div class="carousel-indicator" data-index="4"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Recent Analysis Section -->
+  <section class="activity-section">
+    <div class="content-header">
+      <h2 class="content-title">
+        <i class="fas fa-history"></i>
+        Análisis Recientes
+      </h2>
+    </div>
+    
+    <div class="card">
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Caso</th>
+                <th>Descripción</th>
+                <th>Ubicación</th>
+                <th>Evidencias</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for analisis in ultimos_analisis %}
+              <tr>
+                <td>{{ analisis.fecha_analisis.strftime('%d/%m/%Y %H:%M') }}</td>
+                <td>
+                  <strong>{{ analisis.caso_asociado or 'Sin nombre' }}</strong>
+                </td>
+                <td>
+                  {{ analisis.descripcion[:50] }}{% if analisis.descripcion|length > 50 %}...{% endif %}
+                </td>
+                <td>{{ analisis.ubicacion_escena or 'No especificado' }}</td>
+                <td>
+                  <span class="badge bg-primary">
+                    {{ analisis.evidencias|length }} evidencias
+                  </span>
+                </td>
+              </tr>
+              {% else %}
+              <tr>
+                <td colspan="5" class="text-center text-muted py-4">
+                  <i class="fas fa-inbox fa-2x mb-2"></i>
+                  <br>
+                  No hay análisis recientes
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Configuration Section -->
+  <section id="configuracion" class="config-section mt-4">
+    <div class="content-header">
+      <h2 class="content-title">
+        <i class="fas fa-cogs"></i>
+        Configuración PERIDOT
+      </h2>
+    </div>
+
+    <div class="config-grid">
+      <!-- WiFi Configuration -->
+      <div class="card config-card">
+        <h3 class="config-title">
+          <i class="fas fa-wifi"></i>
+          Conexión WiFi
+        </h3>
+        <form>
+          <div class="form-group">
+            <label for="ssid" class="form-label">SSID</label>
+            <input type="text" id="ssid" class="form-control" placeholder="Ingrese SSID">
+          </div>
+          <div class="form-group">
+            <label for="password" class="form-label">Contraseña</label>
+            <input type="password" id="password" class="form-control" placeholder="Ingrese contraseña">
+          </div>
+          <button type="button" class="btn btn-primary">
+            <i class="fas fa-plug me-2"></i> Conectar
+          </button>
+        </form>
+      </div>
+
+      <!-- Device Connection -->
+      <div class="card config-card">
+        <h3 class="config-title">
+          <i class="fas fa-network-wired"></i>
+          Conexión Dispositivo
+        </h3>
+        <form>
+          <div class="form-group">
+            <label for="ip-address" class="form-label">Dirección IP</label>
+            <input type="text" id="ip-address" class="form-control" value="192.168.1.35:8080" placeholder="Ej: 192.168.1.100">
+          </div>
+          <button type="button" class="btn btn-success">
+            <i class="fas fa-link me-2"></i> Conectar
+          </button>
+        </form>
+      </div>
+    </div>
+  </section>
+  
+{% endblock %}
+
+{% block scripts %}
+  <script>
+  // Función para manejar errores de imágenes
+  function handleImageError(img) {
+    img.style.display = 'none';
+    const fallback = img.nextElementSibling;
+    if (fallback && fallback.classList.contains('fallback-content')) {
+      fallback.style.display = 'block';
+    }
+  }
+  
+  document.addEventListener('DOMContentLoaded', function() {
+    // Carousel functionality
+    const carousel = document.querySelector('.carousel');
+    const items = document.querySelectorAll('.carousel-item');
+    const indicators = document.querySelectorAll('.carousel-indicator');
+    const prevBtn = document.querySelector('.carousel-control.prev');
+    const nextBtn = document.querySelector('.carousel-control.next');
+    
+    let currentIndex = 0;
+    const totalItems = items.length;
+    let autoAdvanceInterval;
+    
+    // Verificar si las imágenes se cargaron correctamente al iniciar
+    items.forEach(item => {
+      const img = item.querySelector('.carousel-image');
+      const fallback = item.querySelector('.fallback-content');
+      
+      // Si la imagen no se cargó, mostrar el contenido de respaldo
+      if (img && (img.complete && img.naturalHeight === 0) || !img.src) {
+        img.style.display = 'none';
+        if (fallback) fallback.style.display = 'block';
+      }
+    });
+    
+    // Function to update carousel position
+    function updateCarousel() {
+      // Asegurarse de que el carrusel tenga el ancho correcto
+      carousel.style.width = `${totalItems * 100}%`;
+      
+      // Aplicar la transformación
+      carousel.style.transform = `translateX(-${(currentIndex / totalItems) * 100}%)`;
+      
+      // Actualizar indicadores
+      indicators.forEach((indicator, index) => {
+        if (index === currentIndex) {
+          indicator.classList.add('active');
+        } else {
+          indicator.classList.remove('active');
+        }
+      });
+    }
+    
+    // Next slide
+    function nextSlide() {
+      currentIndex = (currentIndex + 1) % totalItems;
+      updateCarousel();
+    }
+    
+    // Previous slide
+    function prevSlide() {
+      currentIndex = (currentIndex - 1 + totalItems) % totalItems;
+      updateCarousel();
+    }
+    
+    // Go to specific slide
+    function goToSlide(index) {
+      if (index >= 0 && index < totalItems) {
+        currentIndex = index;
+        updateCarousel();
+      }
+    }
+    
+    // Iniciar el carrusel
+    function startCarousel() {
+      // Configurar el ancho inicial del carrusel
+      carousel.style.width = `${totalItems * 100}%`;
+      
+      // Configurar el ancho de cada item
+      items.forEach(item => {
+        item.style.width = `${100 / totalItems}%`;
+      });
+      
+      // Aplicar la transformación inicial
+      updateCarousel();
+      
+      // Iniciar avance automático
+      autoAdvanceInterval = setInterval(nextSlide, 5000);
+    }
+    
+    // Event listeners for controls
+    if (prevBtn) {
+      prevBtn.addEventListener('click', prevSlide);
+    }
+    
+    if (nextBtn) {
+      nextBtn.addEventListener('click', nextSlide);
+    }
+    
+    // Event listeners for indicators
+    indicators.forEach((indicator) => {
+      const index = parseInt(indicator.getAttribute('data-index'));
+      indicator.addEventListener('click', () => goToSlide(index));
+    });
+    
+    // Pause auto-advancement on hover
+    const carouselContainer = document.querySelector('.carousel-container');
+    if (carouselContainer) {
+      carouselContainer.addEventListener('mouseenter', () => {
+        clearInterval(autoAdvanceInterval);
+      });
+      
+      carouselContainer.addEventListener('mouseleave', () => {
+        autoAdvanceInterval = setInterval(nextSlide, 5000);
+      });
+    }
+    
+    // Iniciar el carrusel
+    startCarousel();
+  });
+  </script>
+{% endblock %}

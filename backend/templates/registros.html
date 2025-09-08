@@ -1,0 +1,571 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Evidencias - PERIDOT Sistema Forense{% endblock %}
+
+{% block head %}
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='base.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='registros.css') }}">
+  <style>
+    .evidence-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    
+    .evidence-card {
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .evidence-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    }
+    
+    .evidence-image {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .evidence-body {
+      padding: 1.25rem;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .evidence-title {
+      font-weight: 600;
+      color: #2c3e50;
+      margin-bottom: 0.5rem;
+    }
+    
+    .evidence-badge {
+      font-size: 0.75rem;
+      padding: 0.35em 0.65em;
+      border-radius: 6px;
+      font-weight: 600;
+    }
+    
+    .badge-escena {
+      background-color: #e8f5e9;
+      color: #2e7d32;
+    }
+    
+    .verification-badge {
+      display: inline-flex;
+      align-items: center;
+      font-size: 0.8rem;
+      margin: 0.75rem 0;
+      padding: 0.35em 0.65em;
+      border-radius: 6px;
+      font-weight: 500;
+    }
+    
+    .verified {
+      background-color: #e8f5e9;
+      color: #2e7d32;
+    }
+    
+    .evidence-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: auto;
+      padding-top: 1rem;
+    }
+    
+    .btn-group-sm {
+      display: flex;
+      gap: 0.5rem;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: #6c757d;
+    }
+    
+    .empty-icon {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+      color: #dee2e6;
+    }
+    
+    /* Estilos mejorados para modales */
+    .modal-peridot .modal-content {
+      border-radius: 12px;
+      border: none;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    }
+    
+    .modal-peridot .modal-header {
+      background: linear-gradient(135deg, #2c3e50 0%, #4a6491 100%);
+      color: white;
+      border-bottom: none;
+      border-radius: 12px 12px 0 0;
+      padding: 1.2rem 1.5rem;
+    }
+    
+    .modal-peridot .modal-title {
+      font-weight: 600;
+      font-size: 1.4rem;
+    }
+    
+    .modal-peridot .btn-close {
+      filter: invert(1);
+      opacity: 0.8;
+    }
+    
+    .modal-peridot .btn-close:hover {
+      opacity: 1;
+    }
+    
+    .modal-peridot .nav-tabs {
+      background-color: #f8f9fa;
+      padding: 0.5rem 1.5rem 0;
+      border-bottom: 1px solid #dee2e6;
+    }
+    
+    .modal-peridot .nav-link {
+      color: #495057;
+      font-weight: 500;
+      border: none;
+      padding: 0.8rem 1.2rem;
+      border-radius: 0;
+    }
+    
+    .modal-peridot .nav-link.active {
+      color: #2c3e50;
+      background-color: transparent;
+      border-bottom: 3px solid #2c3e50;
+    }
+    
+    .modal-peridot .nav-link:hover {
+      color: #2c3e50;
+      border-bottom: 3px solid #a0aec0;
+    }
+    
+    .modal-peridot .tab-content {
+      padding: 1.5rem;
+    }
+    
+    .modal-peridot .evidence-detail-item {
+      margin-bottom: 1rem;
+      display: flex;
+    }
+    
+    .modal-peridot .evidence-detail-label {
+      font-weight: 600;
+      min-width: 150px;
+      color: #2c3e50;
+    }
+    
+    .modal-peridot .evidence-detail-value {
+      flex: 1;
+      color: #495057;
+    }
+    
+    .modal-peridot .evidence-image-large {
+      width: 100%;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      margin-bottom: 1.5rem;
+    }
+    
+    .modal-peridot .evidence-accordion .accordion-item {
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      margin-bottom: 0.8rem;
+      overflow: hidden;
+    }
+    
+    .modal-peridot .evidence-accordion .accordion-button {
+      background-color: #f8f9fa;
+      padding: 1rem 1.25rem;
+      font-weight: 500;
+      color: #2c3e50;
+    }
+    
+    .modal-peridot .evidence-accordion .accordion-button:not(.collapsed) {
+      background-color: #e9ecef;
+      color: #2c3e50;
+    }
+    
+    .modal-peridot .evidence-accordion .accordion-body {
+      padding: 1.25rem;
+      background-color: #fff;
+    }
+    
+    .modal-peridot .evidence-property {
+      display: flex;
+      margin-bottom: 0.8rem;
+    }
+    
+    .modal-peridot .evidence-property-label {
+      font-weight: 600;
+      min-width: 140px;
+      color: #2c3e50;
+    }
+    
+    .modal-peridot .evidence-property-value {
+      flex: 1;
+      color: #495057;
+    }
+    
+    .modal-peridot .modal-footer {
+      border-top: 1px solid #dee2e6;
+      padding: 1rem 1.5rem;
+    }
+    
+    @media (max-width: 768px) {
+      .evidence-grid {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 1rem;
+      }
+      
+      .modal-peridot .evidence-detail-item {
+        flex-direction: column;
+      }
+      
+      .modal-peridot .evidence-detail-label {
+        min-width: auto;
+        margin-bottom: 0.25rem;
+      }
+      
+      .modal-peridot .evidence-property {
+        flex-direction: column;
+      }
+      
+      .modal-peridot .evidence-property-label {
+        min-width: auto;
+        margin-bottom: 0.25rem;
+      }
+    }
+    
+    @media (max-width: 576px) {
+      .evidence-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .modal-peridot .nav-tabs {
+        padding: 0.5rem 1rem 0;
+      }
+      
+      .modal-peridot .nav-link {
+        padding: 0.6rem 0.8rem;
+        font-size: 0.9rem;
+      }
+      
+      .modal-peridot .tab-content {
+        padding: 1rem;
+      }
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1><i class="fas fa-box-archive me-2"></i>Gestión de Evidencias</h1>
+    <p class="page-subtitle">Gestiona y consulta el historial completo de evidencias analizadas</p>
+  </div>
+
+  <!-- Filters Section -->
+  <div class="filters-card">
+    <div class="filters-header">
+      <h5><i class="fas fa-filter me-2"></i>Filtros de búsqueda</h5>
+    </div>
+    <form method="GET" action="{{ url_for('main.registros') }}">
+      <div class="row g-3">
+        <div class="col-md-3">
+          <label class="form-label">Número de Caso</label>
+          <input type="text" class="form-control" name="caso" value="{{ request.args.get('caso','') }}" placeholder="Ej. CF-2023-0001">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Fecha desde</label>
+          <input type="date" class="form-control" name="desde" value="{{ request.args.get('desde','') }}">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Fecha hasta</label>
+          <input type="date" class="form-control" name="hasta" value="{{ request.args.get('hasta','') }}">
+        </div>
+      </div>
+      <div class="mt-3 d-flex gap-2">
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-search me-2"></i>Buscar
+        </button>
+        <a href="{{ url_for('main.registros') }}" class="btn btn-outline-secondary">
+          <i class="fas fa-times me-2"></i>Limpiar
+        </a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Results Header -->
+  <div class="results-header mb-3">
+    <span>{{ analisis_list|length }} resultados encontrados</span>
+  </div>
+
+  <!-- Evidence Grid -->
+  <div class="evidence-grid">
+    {% for analisis in analisis_list %}
+      <div class="evidence-card">
+        {% if analisis.imagen_analizada %}
+          <img src="data:image/png;base64,{{ analisis.imagen_analizada_b64 }}" 
+               class="evidence-image" alt="Evidencia">
+        {% else %}
+          <img src="{{ url_for('static', filename='img/no-image.png') }}" 
+               class="evidence-image" alt="Sin imagen">
+        {% endif %}
+        <div class="evidence-body">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <h6 class="evidence-title">{{ analisis.caso_asociado or "Caso sin código" }}</h6>
+            <span class="evidence-badge badge-escena">Escena</span>
+          </div>
+          <small class="text-muted">
+            <i class="fas fa-calendar-alt me-1"></i>{{ analisis.fecha_analisis.strftime('%d %B %Y') }}
+          </small>
+          <p class="mt-2 text-secondary">
+            {{ analisis.descripcion[:120] }}{% if analisis.descripcion and analisis.descripcion|length > 120 %}...{% endif %}
+          </p>
+          <div class="verification-badge verified">
+            <i class="fas fa-check-circle"></i>Verificado
+          </div>
+          <div class="evidence-actions">
+            <span class="text-muted">
+              <i class="fas fa-eye me-1"></i>{{ analisis.evidencias|length }} objetos
+            </span>
+            <div class="btn-group-sm">
+              <button type="button" 
+                      class="btn btn-outline-primary btn-sm" 
+                      data-bs-toggle="modal" 
+                      data-bs-target="#modalAnalisis{{ analisis.id }}">
+                <i class="fas fa-eye me-1"></i>Ver
+              </button>
+
+              <form method="POST" action="{{ url_for('main.eliminar_analisis', analisis_id=analisis.id) }}" 
+                    style="display:inline;">
+                <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('¿Seguro que deseas eliminar este análisis?')">
+                  <i class="fas fa-trash me-1"></i>
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal de Análisis - Rediseñado -->
+      <div class="modal fade modal-peridot" id="modalAnalisis{{ analisis.id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">
+                <i class="fas fa-box-archive me-2"></i>Análisis: {{ analisis.caso_asociado or "Sin código" }}
+              </h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            
+            <!-- Pestañas de navegación -->
+            <ul class="nav nav-tabs" id="analisisTabs{{ analisis.id }}" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="resumen-tab-{{ analisis.id }}" data-bs-toggle="tab" 
+                        data-bs-target="#resumen-{{ analisis.id }}" type="button" role="tab" 
+                        aria-controls="resumen-{{ analisis.id }}" aria-selected="true">
+                  <i class="fas fa-info-circle me-1"></i>Resumen
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="evidencias-tab-{{ analisis.id }}" data-bs-toggle="tab" 
+                        data-bs-target="#evidencias-{{ analisis.id }}" type="button" role="tab" 
+                        aria-controls="evidencias-{{ analisis.id }}" aria-selected="false">
+                  <i class="fas fa-boxes me-1"></i>Evidencias ({{ analisis.evidencias|length }})
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="imagen-tab-{{ analisis.id }}" data-bs-toggle="tab" 
+                        data-bs-target="#imagen-{{ analisis.id }}" type="button" role="tab" 
+                        aria-controls="imagen-{{ analisis.id }}" aria-selected="false">
+                  <i class="fas fa-image me-1"></i>Imagen
+                </button>
+              </li>
+            </ul>
+            
+            <div class="tab-content" id="analisisTabsContent{{ analisis.id }}">
+              <!-- Pestaña de Resumen -->
+              <div class="tab-pane fade show active" id="resumen-{{ analisis.id }}" role="tabpanel" aria-labelledby="resumen-tab-{{ analisis.id }}">
+                <div class="evidence-detail-item">
+                  <span class="evidence-detail-label">Fecha de análisis:</span>
+                  <span class="evidence-detail-value">{{ analisis.fecha_analisis.strftime('%d de %B de %Y') }}</span>
+                </div>
+                
+                <div class="evidence-detail-item">
+                  <span class="evidence-detail-label">Código de caso:</span>
+                  <span class="evidence-detail-value">{{ analisis.caso_asociado or "No especificado" }}</span>
+                </div>
+                
+                <div class="evidence-detail-item">
+                  <span class="evidence-detail-label">Ubicación:</span>
+                  <span class="evidence-detail-value">{{ analisis.ubicacion_escena or "No especificada" }}</span>
+                </div>
+                
+                <div class="evidence-detail-item">
+                  <span class="evidence-detail-label">Descripción:</span>
+                  <span class="evidence-detail-value">{{ analisis.descripcion or "Sin descripción" }}</span>
+                </div>
+                
+                <div class="evidence-detail-item">
+                  <span class="evidence-detail-label">Estado:</span>
+                  <span class="evidence-detail-value">
+                    <span class="badge bg-success">Verificado</span>
+                  </span>
+                </div>
+                
+                <div class="evidence-detail-item">
+                  <span class="evidence-detail-label">Total de evidencias:</span>
+                  <span class="evidence-detail-value">{{ analisis.evidencias|length }} objetos</span>
+                </div>
+              </div>
+              
+              <!-- Pestaña de Evidencias -->
+              <div class="tab-pane fade" id="evidencias-{{ analisis.id }}" role="tabpanel" aria-labelledby="evidencias-tab-{{ analisis.id }}">
+                {% if analisis.evidencias %}
+                  <div class="evidence-accordion accordion" id="accordionEvidencias{{ analisis.id }}">
+                    {% for evidencia in analisis.evidencias %}
+                    <div class="accordion-item">
+                      <h2 class="accordion-header" id="heading{{ evidencia.id }}">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                data-bs-target="#collapse{{ evidencia.id }}" aria-expanded="false" 
+                                aria-controls="collapse{{ evidencia.id }}">
+                          <i class="fas fa-box me-2"></i>{{ evidencia.label }}
+                        </button>
+                      </h2>
+                      <div id="collapse{{ evidencia.id }}" class="accordion-collapse collapse" 
+                           aria-labelledby="heading{{ evidencia.id }}" data-bs-parent="#accordionEvidencias{{ analisis.id }}">
+                        <div class="accordion-body">
+                          <div class="evidence-property">
+                            <span class="evidence-property-label">Ubicación:</span>
+                            <span class="evidence-property-value">{{ evidencia.ubicacion or "No especificada" }}</span>
+                          </div>
+                          
+                          <div class="evidence-property">
+                            <span class="evidence-property-label">Naturaleza:</span>
+                            <span class="evidence-property-value">{{ evidencia.naturaleza or "No especificada" }}</span>
+                          </div>
+                          
+                          <div class="evidence-property">
+                            <span class="evidence-property-label">Condición:</span>
+                            <span class="evidence-property-value">{{ evidencia.condicion or "No especificada" }}</span>
+                          </div>
+                          
+                          <div class="evidence-property">
+                            <span class="evidence-property-label">Indicios:</span>
+                            <span class="evidence-property-value">{{ evidencia.indicios or "No especificados" }}</span>
+                          </div>
+                          
+                          <div class="evidence-property">
+                            <span class="evidence-property-label">Pertinencia:</span>
+                            <span class="evidence-property-value">{{ evidencia.pertinencia or "No especificada" }}</span>
+                          </div>
+                          
+                          <div class="evidence-property">
+                            <span class="evidence-property-label">Valor probatorio:</span>
+                            <span class="evidence-property-value">{{ evidencia.valor_probatorio or "No especificado" }}</span>
+                          </div>
+                          
+                          <div class="evidence-property">
+                            <span class="evidence-property-label">Observaciones:</span>
+                            <span class="evidence-property-value">{{ evidencia.observaciones or "Ninguna" }}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    {% endfor %}
+                  </div>
+                {% else %}
+                  <div class="text-center py-4">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No se encontraron evidencias para este análisis.</p>
+                  </div>
+                {% endif %}
+              </div>
+              
+              <!-- Pestaña de Imagen -->
+              <div class="tab-pane fade" id="imagen-{{ analisis.id }}" role="tabpanel" aria-labelledby="imagen-tab-{{ analisis.id }}">
+                {% if analisis.imagen_analizada %}
+                  <img src="data:image/png;base64,{{ analisis.imagen_analizada_b64 }}" 
+                       class="evidence-image-large" alt="Imagen del análisis">
+                  <div class="text-center mt-3">
+                    <a href="data:image/png;base64,{{ analisis.imagen_analizada_b64 }}" 
+                       download="evidencia_{{ analisis.caso_asociado or 'sin_codigo' }}.png" 
+                       class="btn btn-outline-primary">
+                      <i class="fas fa-download me-2"></i>Descargar imagen
+                    </a>
+                  </div>
+                {% else %}
+                  <div class="text-center py-4">
+                    <i class="fas fa-image fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No hay imagen disponible para este análisis.</p>
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+            
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                <i class="fas fa-times me-1"></i>Cerrar
+              </button>
+              <a href="#" class="btn btn-outline-primary">
+                <i class="fas fa-print me-1"></i>Imprimir
+              </a>
+              <a href="{{ url_for('main.exportar_pdf', analisis_id=analisis.id) }}" class="btn btn-primary">
+                <i class="fas fa-download me-1"></i>Exportar PDF
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  {% if analisis_list|length == 0 %}
+  <div class="empty-state">
+    <div class="empty-icon">
+      <i class="fas fa-search"></i>
+    </div>
+    <h5>No se encontraron resultados</h5>
+    <p>Prueba con otros filtros de búsqueda.</p>
+  </div>
+  {% endif %}
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    // Smooth scrolling
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+    
+    // Inicializar tooltips de Bootstrap
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+  </script>
+{% endblock %}

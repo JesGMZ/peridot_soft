@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}PERIDOT{% endblock %}</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='base.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header / Navbar -->
+    <header class="app-header d-flex justify-content-between align-items-center px-3">
+      <a href="{{ url_for('main.index') }}" class="app-brand"><i class="fas fa-gem me-2"></i>PERIDOT</a>
+      
+      <div class="user-info dropdown">
+        <i class="fas fa-bell notification-icon me-3"></i>
+
+        <!-- Avatar + Nombre como botón -->
+        <a class="d-flex align-items-center text-decoration-none dropdown-toggle" href="#" role="button" id="userMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
+          <div class="user-avatar me-2"><i class="fas fa-user"></i></div>
+          <span class="user-name">
+            {% if current_user.is_authenticated %}
+              {{ current_user.nombre_completo }}
+            {% else %}
+              Usuario
+            {% endif %}
+          </span>
+        </a>
+
+        <!-- Menú desplegable -->
+        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenuLink">
+          {% if current_user.is_authenticated %}
+            <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">
+              <i class="fas fa-sign-out-alt me-2"></i>Cerrar sesión
+            </a></li>
+          {% else %}
+            <li><a class="dropdown-item" href="{{ url_for('auth.login') }}">
+              <i class="fas fa-sign-in-alt me-2"></i>Iniciar sesión
+            </a></li>
+          {% endif %}
+        </ul>
+      </div>
+    </header>
+
+    <main class="app-main">
+      <!-- Sidebar -->
+      <aside class="app-sidebar">
+        <div class="sidebar-content">
+          <h2 class="sidebar-title">Panel de Control</h2>
+          <nav>
+            <ul class="sidebar-nav">
+
+              <!-- Dashboard -->
+              <li class="sidebar-nav-item">
+                <a href="{{ url_for('main.dashboard') }}" class="sidebar-nav-link">
+                  <i class="fas fa-home sidebar-nav-icon"></i>
+                  Dashboard
+                </a>
+              </li>
+
+              <li class="sidebar-nav-item">
+                <a href="{{ url_for('main.chat_interface') }}" class="sidebar-nav-link">
+                  <i class="fas fa-search sidebar-nav-icon"></i>
+                  Análisis Preliminar
+                </a>
+              </li>
+              
+              <li class="sidebar-nav-item">
+                <a href="{{ url_for('main.registros') }}" class="sidebar-nav-link">
+                  <i class="fas fa-box-archive sidebar-nav-icon"></i>
+                  Gestión de Evidencias
+                </a>
+              </li>
+              
+              <li class="sidebar-nav-item">
+                <a href="{{ url_for('main.analisis_usuarios') }}" class="sidebar-nav-link">
+                  <i class="fas fa-file-alt sidebar-nav-icon"></i>
+                  Informes
+                </a>
+              </li>
+              
+              <li class="sidebar-nav-item">
+                <a href="#" class="sidebar-nav-link">
+                  <i class="fas fa-cogs sidebar-nav-icon"></i>
+                  Configuración
+                </a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </aside>
+
+      <!-- Content -->
+      <div class="app-content">
+        {% block content %}
+        <!-- Aquí va el contenido de cada página -->
+        {% endblock %}
+      </div>
+    </main>
+  </div>
+
+  <!-- Bootstrap JS (para el dropdown) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>
