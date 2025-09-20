@@ -222,28 +222,77 @@ def eliminar_analisis(analisis_id):
 @bp.route('/configurar_camara', methods=['POST'])
 @login_required
 def configurar_camara():
-    nueva_ip = request.form.get("camera_ip")
+    nueva_url = request.form.get("camera_url")
 
-    if not nueva_ip:
-        flash("Debe ingresar una dirección IP válida.", "danger")
+    if not nueva_url:
+        flash("Debe ingresar una URL válida de la cámara.", "danger")
         return redirect(url_for("main.dashboard"))
 
     # Guardar en el usuario actual
-    current_user.camara_ip = nueva_ip
+    current_user.camara_ip = nueva_url
     db.session.commit()
 
-    flash(f"Dirección IP de la cámara configurada: {nueva_ip}", "success")
+    flash(f"URL de la cámara configurada: {nueva_url}", "success")
     return redirect(url_for("main.dashboard"))
-
 
 
 def get_user_camera_url():
     if current_user.is_authenticated and current_user.camara_ip:
-        return f"http://{current_user.camara_ip}:8080/video"
-    # fallback por defecto si no hay IP guardada
-    return "http://192.168.1.34:8080/video"
+        return current_user.camara_ip  # Aquí ya tienes rtsp://... completo
+    # fallback por defecto
+    return "rtsp://admin:RCACOI@192.168.1.37:554/Streaming/Channels/101"
 
-
+@bp.route('/upload_image', methods=['POST'])
+@login_required
+def upload_image():
+    global captured_image, result_image_data, result_points, result_analysis_text
+    
+    # Verificar que se haya enviado un archivo
+    if 'image' not in request.files:
+        return jsonify({'error': 'No se encontró archivo de imagen'}), 400
+    
+    file = request.files['image']
+    if file.filename == '':
+        return jsonify({'error': 'No se seleccionó ningún archivo'}), 400
+    
+    # Verificar que sea un archivo de imagen válido
+    allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'}
+    if not ('.' in file.filename and file.filename.rsplit('.', 1)[1].lower() in allowed_extensions):
+        return jsonify({'error': 'Formato de archivo no válido. Use: PNG, JPG, JPEG, GIF, BMP, WEBP'}), 400
+    
+    try:
+        # Leer el archivo de imagen
+        image_data = file.read()
+        
+        # Convertir a PIL Image
+        captured_image = Image.open(io.BytesIO(image_data))
+        
+        # Convertir a RGB si es necesario (para evitar problemas con algunos formatos)
+        if captured_image.mode != 'RGB':
+            captured_image = captured_image.convert('RGB')
+        
+        # Redimensionar si es muy grande (mantener proporciones)
+        max_size = 1920
+        if captured_image.size[0] > max_size or captured_image.size[1] > max_size:
+            captured_image.thumbnail((max_size, max_size), Image.Resampling.LANCZOS)
+        
+        # Codificar la imagen a base64 para mostrar en la interfaz
+        buffered = io.BytesIO()
+        captured_image.save(buffered, format="PNG")
+        result_image_data = base64.b64encode(buffered.getvalue()).decode()
+        
+        # Reiniciar análisis previo
+        result_points = None
+        result_analysis_text = None
+        
+        return jsonify({
+            'success': True,
+            'message': 'Imagen subida correctamente'
+        })
+        
+    except Exception as e:
+        print(f"Error al procesar imagen: {e}")
+        return jsonify({'error': f'Error al procesar la imagen: {str(e)}'}), 500
 
 @bp.route('/analisis/<int:analisis_id>')
 @login_required

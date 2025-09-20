@@ -533,14 +533,13 @@
                 <i class="fas fa-network-wired"></i>
                 Conexión Dispositivo
               </h3>
-
-              <form method="POST" action="{{ url_for('main.configurar_camara') }}">
-                <div class="form-group">
-                  <label for="ip-address" class="form-label">Dirección IP</label>
-                  <input type="text" id="ip-address" name="camera_ip" class="form-control" 
-                        placeholder="Ej: 192.168.1.100" required>
-                </div>
-                
+                <form method="POST" action="{{ url_for('main.configurar_camara') }}">
+                  <div class="form-group">
+                    <label for="camera-url" class="form-label">URL completa de la cámara</label>
+                    <input type="text" id="camera-url" name="camera_url" class="form-control" 
+                          placeholder="Ej: rtsp://usuario:password@192.168.1.37:554/Streaming/Channels/101" required>
+                  </div>
+                </form>     
                 <button type="submit" class="btn btn-success">
                   <i class="fas fa-link me-2"></i>
                   Conectar
