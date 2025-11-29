@@ -271,6 +271,23 @@
         padding: 1rem;
       }
     }
+
+    /* 🔹 Scroll interno solo para la pestaña Evidencias */
+    .modal-peridot .tab-pane.evidencias-scroll {
+      max-height: 400px;       /* ajusta la altura que desees */
+      overflow-y: auto;        /* habilita el scroll vertical */
+      padding-right: 0.5rem;   /* pequeño espacio para que no tape el scroll */
+    }
+
+    /* Opcional: scrollbar más delgado/estético */
+    .modal-peridot .tab-pane.evidencias-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
+    .modal-peridot .tab-pane.evidencias-scroll::-webkit-scrollbar-thumb {
+      background-color: rgba(0,0,0,.2);
+      border-radius: 4px;
+    }
+
   </style>
 {% endblock %}
 
@@ -366,168 +383,178 @@
       </div>
 
       <!-- Modal de Análisis - Rediseñado -->
-      <div class="modal fade modal-peridot" id="modalAnalisis{{ analisis.id }}" tabindex="-1" aria-hidden="true">
+      <div class="modal fade modal-peridot" id="modalAnalisis{{ analisis.id }}" tabindex="-1" aria-hidden="true"
+          data-analisis-id="{{ analisis.id }}">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
           <div class="modal-content">
             <div class="modal-header">
               <h5 class="modal-title">
-                <i class="fas fa-box-archive me-2"></i>Análisis: {{ analisis.caso_asociado or "Sin código" }}
+                <i class="fas fa-box-archive me-2"></i>
+                Análisis: {{ analisis.caso_asociado or "Sin código" }}
               </h5>
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
-            
-            <!-- Pestañas de navegación -->
+
+            <!-- Pestañas -->
             <ul class="nav nav-tabs" id="analisisTabs{{ analisis.id }}" role="tablist">
               <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="resumen-tab-{{ analisis.id }}" data-bs-toggle="tab" 
-                        data-bs-target="#resumen-{{ analisis.id }}" type="button" role="tab" 
-                        aria-controls="resumen-{{ analisis.id }}" aria-selected="true">
+                <button class="nav-link active" id="resumen-tab-{{ analisis.id }}" data-bs-toggle="tab"
+                        data-bs-target="#resumen-{{ analisis.id }}" type="button" role="tab">
                   <i class="fas fa-info-circle me-1"></i>Resumen
                 </button>
               </li>
               <li class="nav-item" role="presentation">
-                <button class="nav-link" id="evidencias-tab-{{ analisis.id }}" data-bs-toggle="tab" 
-                        data-bs-target="#evidencias-{{ analisis.id }}" type="button" role="tab" 
-                        aria-controls="evidencias-{{ analisis.id }}" aria-selected="false">
-                  <i class="fas fa-boxes me-1"></i>Evidencias ({{ analisis.evidencias|length }})
+                <button class="nav-link" id="evidencias-tab-{{ analisis.id }}" data-bs-toggle="tab"
+                        data-bs-target="#evidencias-{{ analisis.id }}" type="button" role="tab">
+                  <i class="fas fa-boxes me-1"></i>
+                  Evidencias ({{ analisis.evidencias|length }})
                 </button>
               </li>
               <li class="nav-item" role="presentation">
-                <button class="nav-link" id="imagen-tab-{{ analisis.id }}" data-bs-toggle="tab" 
-                        data-bs-target="#imagen-{{ analisis.id }}" type="button" role="tab" 
-                        aria-controls="imagen-{{ analisis.id }}" aria-selected="false">
+                <button class="nav-link" id="imagen-tab-{{ analisis.id }}" data-bs-toggle="tab"
+                        data-bs-target="#imagen-{{ analisis.id }}" type="button" role="tab">
                   <i class="fas fa-image me-1"></i>Imagen
                 </button>
               </li>
             </ul>
-            
+
             <div class="tab-content" id="analisisTabsContent{{ analisis.id }}">
-              <!-- Pestaña de Resumen -->
-              <div class="tab-pane fade show active" id="resumen-{{ analisis.id }}" role="tabpanel" aria-labelledby="resumen-tab-{{ analisis.id }}">
+
+              <!-- ✅ RESUMEN -->
+              <div class="tab-pane fade show active p-3" id="resumen-{{ analisis.id }}" role="tabpanel">
                 <div class="evidence-detail-item">
                   <span class="evidence-detail-label">Fecha de análisis:</span>
-                  <span class="evidence-detail-value">{{ analisis.fecha_analisis.strftime('%d de %B de %Y') }}</span>
+                  <span class="evidence-detail-value">
+                    {{ analisis.fecha_analisis.strftime('%d de %B de %Y') }}
+                  </span>
                 </div>
-                
+
                 <div class="evidence-detail-item">
                   <span class="evidence-detail-label">Código de caso:</span>
                   <span class="evidence-detail-value">{{ analisis.caso_asociado or "No especificado" }}</span>
                 </div>
-                
+
                 <div class="evidence-detail-item">
                   <span class="evidence-detail-label">Ubicación:</span>
                   <span class="evidence-detail-value">{{ analisis.ubicacion_escena or "No especificada" }}</span>
                 </div>
-                
+
                 <div class="evidence-detail-item">
                   <span class="evidence-detail-label">Descripción:</span>
                   <span class="evidence-detail-value">{{ analisis.descripcion or "Sin descripción" }}</span>
                 </div>
-                
+
                 <div class="evidence-detail-item">
                   <span class="evidence-detail-label">Estado:</span>
                   <span class="evidence-detail-value">
                     <span class="badge bg-success">Verificado</span>
                   </span>
                 </div>
-                
+
                 <div class="evidence-detail-item">
                   <span class="evidence-detail-label">Total de evidencias:</span>
                   <span class="evidence-detail-value">{{ analisis.evidencias|length }} objetos</span>
                 </div>
-              </div>
-              
-              <!-- Pestaña de Evidencias -->
-              <div class="tab-pane fade" id="evidencias-{{ analisis.id }}" role="tabpanel" aria-labelledby="evidencias-tab-{{ analisis.id }}">
+
+                <!-- 🔹 Indicadores dinámicos -->
+                <hr class="my-3">
+                <div class="evidence-detail-item">
+                  <span class="evidence-detail-label">Evidencias verificadas por el experto:</span>
+                  <span class="evidence-detail-value">{{ analisis.verificadas_count }}</span>
+                </div>
+
+                <div class="evidence-detail-item">
+                  <span class="evidence-detail-label">Evidencias omitidas:</span>
+                  <span class="evidence-detail-value">{{ analisis.omitidas_count }}</span>
+                </div>
+                </div>
+
+              <!--EVIDENCIAS -->
+              <div class="tab-pane fade p-3 evidencias-scroll" id="evidencias-{{ analisis.id }}" role="tabpanel">
                 {% if analisis.evidencias %}
-                  <div class="evidence-accordion accordion" id="accordionEvidencias{{ analisis.id }}">
-                    {% for evidencia in analisis.evidencias %}
-                    <div class="accordion-item">
-                      <h2 class="accordion-header" id="heading{{ evidencia.id }}">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
-                                data-bs-target="#collapse{{ evidencia.id }}" aria-expanded="false" 
-                                aria-controls="collapse{{ evidencia.id }}">
-                          <i class="fas fa-box me-2"></i>{{ evidencia.label }}
-                        </button>
-                      </h2>
-                      <div id="collapse{{ evidencia.id }}" class="accordion-collapse collapse" 
-                           aria-labelledby="heading{{ evidencia.id }}" data-bs-parent="#accordionEvidencias{{ analisis.id }}">
-                        <div class="accordion-body">
-                          <div class="evidence-property">
-                            <span class="evidence-property-label">Ubicación:</span>
-                            <span class="evidence-property-value">{{ evidencia.ubicacion or "No especificada" }}</span>
-                          </div>
-                          
-                          <div class="evidence-property">
-                            <span class="evidence-property-label">Naturaleza:</span>
-                            <span class="evidence-property-value">{{ evidencia.naturaleza or "No especificada" }}</span>
-                          </div>
-                          
-                          <div class="evidence-property">
-                            <span class="evidence-property-label">Condición:</span>
-                            <span class="evidence-property-value">{{ evidencia.condicion or "No especificada" }}</span>
-                          </div>
-                          
-                          <div class="evidence-property">
-                            <span class="evidence-property-label">Indicios:</span>
-                            <span class="evidence-property-value">{{ evidencia.indicios or "No especificados" }}</span>
-                          </div>
-                          
-                          <div class="evidence-property">
-                            <span class="evidence-property-label">Pertinencia:</span>
-                            <span class="evidence-property-value">{{ evidencia.pertinencia or "No especificada" }}</span>
-                          </div>
-                          
-                          <div class="evidence-property">
-                            <span class="evidence-property-label">Valor probatorio:</span>
-                            <span class="evidence-property-value">{{ evidencia.valor_probatorio or "No especificado" }}</span>
-                          </div>
-                          
-                          <div class="evidence-property">
-                            <span class="evidence-property-label">Observaciones:</span>
-                            <span class="evidence-property-value">{{ evidencia.observaciones or "Ninguna" }}</span>
-                          </div>
+                <div class="accordion" id="accordionEvidencias{{ analisis.id }}">
+                  {% for evidencia in analisis.evidencias %}
+                  <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading{{ evidencia.id }}">
+                      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                              data-bs-target="#collapse{{ evidencia.id }}" aria-expanded="false">
+                        <i class="fas fa-box me-2"></i>
+                        {{ evidencia.label }}
+                        <span class="ms-2 text-muted small">
+                          {{ evidencia.duracion_segundos if evidencia.duracion_segundos is not none else "N/A" }} s
+                        </span>
+                      </button>
+                    </h2>
+                    <div id="collapse{{ evidencia.id }}" class="accordion-collapse collapse"
+                        aria-labelledby="heading{{ evidencia.id }}"
+                        data-bs-parent="#accordionEvidencias{{ analisis.id }}">
+                      <div class="accordion-body">
+                        <div class="evidence-property">
+                          <span class="evidence-property-label">Ubicación:</span>
+                          <span class="evidence-property-value">{{ evidencia.ubicacion or "No especificada" }}</span>
+                        </div>
+                        <div class="evidence-property">
+                          <span class="evidence-property-label">Naturaleza:</span>
+                          <span class="evidence-property-value">{{ evidencia.naturaleza or "No especificada" }}</span>
+                        </div>
+                        <div class="evidence-property">
+                          <span class="evidence-property-label">Condición:</span>
+                          <span class="evidence-property-value">{{ evidencia.condicion or "No especificada" }}</span>
+                        </div>
+                        <div class="evidence-property">
+                          <span class="evidence-property-label">Indicios:</span>
+                          <span class="evidence-property-value">{{ evidencia.indicios or "No especificados" }}</span>
+                        </div>
+                        <div class="evidence-property">
+                          <span class="evidence-property-label">Pertinencia:</span>
+                          <span class="evidence-property-value">{{ evidencia.pertinencia or "No especificada" }}</span>
+                        </div>
+                        <div class="evidence-property">
+                          <span class="evidence-property-label">Valor probatorio:</span>
+                          <span class="evidence-property-value">{{ evidencia.valor_probatorio or "No especificado" }}</span>
+                        </div>
+                        <div class="evidence-property">
+                          <span class="evidence-property-label">Observaciones:</span>
+                          <span class="evidence-property-value">{{ evidencia.observaciones or "Ninguna" }}</span>
                         </div>
                       </div>
                     </div>
-                    {% endfor %}
                   </div>
+                  {% endfor %}
+                </div>
                 {% else %}
-                  <div class="text-center py-4">
-                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
-                    <p class="text-muted">No se encontraron evidencias para este análisis.</p>
-                  </div>
+                <div class="text-center py-4">
+                  <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                  <p class="text-muted">No se encontraron evidencias para este análisis.</p>
+                </div>
                 {% endif %}
               </div>
-              
-              <!-- Pestaña de Imagen -->
-              <div class="tab-pane fade" id="imagen-{{ analisis.id }}" role="tabpanel" aria-labelledby="imagen-tab-{{ analisis.id }}">
+              <!-- ✅ IMAGEN -->
+              <div class="tab-pane fade p-3" id="imagen-{{ analisis.id }}" role="tabpanel">
                 {% if analisis.imagen_analizada %}
-                  <img src="data:image/png;base64,{{ analisis.imagen_analizada_b64 }}" 
-                       class="evidence-image-large" alt="Imagen del análisis">
-                  <div class="text-center mt-3">
-                    <a href="data:image/png;base64,{{ analisis.imagen_analizada_b64 }}" 
-                       download="evidencia_{{ analisis.caso_asociado or 'sin_codigo' }}.png" 
-                       class="btn btn-outline-primary">
-                      <i class="fas fa-download me-2"></i>Descargar imagen
-                    </a>
-                  </div>
+                <img src="data:image/png;base64,{{ analisis.imagen_analizada_b64 }}"
+                    class="evidence-image-large mb-3" alt="Imagen del análisis">
+                <div class="text-center">
+                  <a href="data:image/png;base64,{{ analisis.imagen_analizada_b64 }}"
+                    download="evidencia_{{ analisis.caso_asociado or 'sin_codigo' }}.png"
+                    class="btn btn-outline-primary">
+                    <i class="fas fa-download me-2"></i>Descargar imagen
+                  </a>
+                </div>
                 {% else %}
-                  <div class="text-center py-4">
-                    <i class="fas fa-image fa-3x text-muted mb-3"></i>
-                    <p class="text-muted">No hay imagen disponible para este análisis.</p>
-                  </div>
+                <div class="text-center py-4">
+                  <i class="fas fa-image fa-3x text-muted mb-3"></i>
+                  <p class="text-muted">No hay imagen disponible para este análisis.</p>
+                </div>
                 {% endif %}
               </div>
             </div>
-            
+
+            <!-- FOOTER -->
             <div class="modal-footer">
               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                 <i class="fas fa-times me-1"></i>Cerrar
               </button>
-              <a href="#" class="btn btn-outline-primary">
-                <i class="fas fa-print me-1"></i>Imprimir
-              </a>
               <a href="{{ url_for('main.exportar_pdf', analisis_id=analisis.id) }}" class="btn btn-primary">
                 <i class="fas fa-download me-1"></i>Exportar PDF
               </a>
@@ -568,4 +595,6 @@
       return new bootstrap.Tooltip(tooltipTriggerEl)
     });
   </script>
+
+
 {% endblock %}

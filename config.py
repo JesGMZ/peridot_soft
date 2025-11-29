@@ -14,7 +14,7 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Gemini API
-    GOOGLE_API_KEY = os.environ.get('GOOGLE_API_KEY', 'AIzaSyAbOSJbQGO_PNC2pahShCYk1P6uDGvVhMw')
+    GOOGLE_API_KEY = os.environ.get('GOOGLE_API_KEY', 'AIzaSyC-kiqH23yUDaxr626qVX1tEtnjO4N9KPc')
 
     # Cámara (por defecto la IP local, pero configurable)
     CAMERA_STREAM_URL = os.environ.get('CAMERA_STREAM_URL', 'http://192.168.1.34:8080/video')

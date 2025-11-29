@@ -11,7 +11,7 @@ import cv2
 app = Flask(__name__)
 
 # --- CONFIGURACIÓN ---
-GOOGLE_API_KEY = "AIzaSyAbOSJbQGO_PNC2pahShCYk1P6uDGvVhMw"
+GOOGLE_API_KEY = "AIzaSyC-kiqH23yUDaxr626qVX1tEtnjO4N9KPc"
 CAMERA_STREAM_URL = "http://192.168.1.35:8080/video"
 
 genai.configure(api_key=GOOGLE_API_KEY)

@@ -17,15 +17,16 @@ from reportlab.platypus import Image as RLImage
 from reportlab.lib import colors
 from datetime import datetime, timedelta
 from sqlalchemy import func, extract
+from werkzeug.security import check_password_hash
 
 bp = Blueprint('main', __name__)
 
-# User loader para Flask-Login (aquí no hay circularidad)
+
 @login_manager.user_loader
 def load_user(user_id):
     return Usuario.query.get(int(user_id))
 
-# Configuración Gemini (se inicializará en cada request que lo necesite)
+
 def get_gemini_model():
     genai.configure(api_key=current_app.config['GOOGLE_API_KEY'])
     return genai.GenerativeModel('gemini-2.5-flash')
@@ -122,80 +123,13 @@ def dashboard():
         distribucion_data=json.dumps(distribucion_data)
     )
 
-@bp.route('/api/estadisticas')
-@login_required
-def api_estadisticas():
-    # Obtener estadísticas actualizadas
-    total_analisis = Analisis.query.count()
-    total_evidencias = Evidencia.query.count()
-    
-    # Obtener datos para gráficos (misma lógica que en dashboard)
-    siete_dias_atras = datetime.now() - timedelta(days=7)
-    
-    # Crear un diccionario con todos los días de la semana inicializados en 0
-    actividad_dict = {}
-    for i in range(7):
-        fecha = siete_dias_atras + timedelta(days=i)
-        fecha_str = fecha.strftime('%Y-%m-%d')
-        actividad_dict[fecha_str] = 0
-    
-    analisis_por_dia = db.session.query(
-        func.date(Analisis.fecha_analisis).label('fecha'),
-        func.count(Analisis.id).label('cantidad')
-    ).filter(Analisis.fecha_analisis >= siete_dias_atras)\
-     .group_by(func.date(Analisis.fecha_analisis)).all()
-    
-    # Actualizar el diccionario con datos reales
-    for analisis in analisis_por_dia:
-        fecha_str = analisis.fecha.strftime('%Y-%m-%d')
-        if fecha_str in actividad_dict:
-            actividad_dict[fecha_str] = analisis.cantidad
-    
-    # Preparar datos finales
-    actividad_labels = []
-    actividad_data = []
-    
-    for i in range(7):
-        fecha = siete_dias_atras + timedelta(days=i)
-        fecha_str = fecha.strftime('%Y-%m-%d')
-        dia_nombre = fecha.strftime('%a')
-        
-        actividad_labels.append(f"{dia_nombre} {fecha.strftime('%d')}")
-        actividad_data.append(actividad_dict.get(fecha_str, 0))
-    
-    # Distribución real
-    total_con_evidencias = db.session.query(Analisis.id).join(Evidencia).distinct().count()
-    total_sin_evidencias = total_analisis - total_con_evidencias
-    
-    if total_analisis == 0:
-        distribucion_labels = ['Sin datos']
-        distribucion_data = [1]
-    else:
-        distribucion_labels = ['Con evidencias', 'Sin evidencias']
-        distribucion_data = [total_con_evidencias, total_sin_evidencias]
-        
-        if sum(distribucion_data) == 0:
-            distribucion_labels = ['Sin datos']
-            distribucion_data = [1]
-    
-    return jsonify({
-        'total_analisis': total_analisis,
-        'total_evidencias': total_evidencias,
-        'actividad_labels': actividad_labels,
-        'actividad_data': actividad_data,
-        'distribucion_labels': distribucion_labels,
-        'distribucion_data': distribucion_data
-    })
-
 @bp.route('/registros')
 @login_required
 def registros():
-    # Filtrar por usuario logueado
     analisis_list = Analisis.query.filter_by(usuario_id=current_user.id) \
                                   .order_by(Analisis.fecha_analisis.desc()) \
                                   .all()
 
-    # Convertir imágenes a base64
     for analisis in analisis_list:
         if analisis.imagen_analizada:
             analisis.imagen_analizada_b64 = base64.b64encode(
@@ -203,6 +137,24 @@ def registros():
             ).decode('utf-8')
         else:
             analisis.imagen_analizada_b64 = None
+
+        verificadas = 0
+        omitidas = 0
+
+        for e in analisis.evidencias:
+            if e.fecha_documentacion and e.fecha_identificacion:
+                delta = e.fecha_documentacion - e.fecha_identificacion
+                e.tiempo_min = round(delta.total_seconds() / 60, 2)
+            else:
+                e.tiempo_min = None
+
+            if e.verificada:
+                verificadas += 1
+            if e.omitida:
+                omitidas += 1
+
+        analisis.verificadas_count = verificadas
+        analisis.omitidas_count = omitidas
 
     return render_template('registros.html', analisis_list=analisis_list)
 
@@ -255,33 +207,26 @@ def upload_image():
     if file.filename == '':
         return jsonify({'error': 'No se seleccionó ningún archivo'}), 400
     
-    # Verificar que sea un archivo de imagen válido
     allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'}
     if not ('.' in file.filename and file.filename.rsplit('.', 1)[1].lower() in allowed_extensions):
         return jsonify({'error': 'Formato de archivo no válido. Use: PNG, JPG, JPEG, GIF, BMP, WEBP'}), 400
     
     try:
-        # Leer el archivo de imagen
         image_data = file.read()
         
-        # Convertir a PIL Image
         captured_image = Image.open(io.BytesIO(image_data))
         
-        # Convertir a RGB si es necesario (para evitar problemas con algunos formatos)
         if captured_image.mode != 'RGB':
             captured_image = captured_image.convert('RGB')
         
-        # Redimensionar si es muy grande (mantener proporciones)
         max_size = 1920
         if captured_image.size[0] > max_size or captured_image.size[1] > max_size:
             captured_image.thumbnail((max_size, max_size), Image.Resampling.LANCZOS)
         
-        # Codificar la imagen a base64 para mostrar en la interfaz
         buffered = io.BytesIO()
         captured_image.save(buffered, format="PNG")
         result_image_data = base64.b64encode(buffered.getvalue()).decode()
         
-        # Reiniciar análisis previo
         result_points = None
         result_analysis_text = None
         
@@ -323,8 +268,7 @@ def reset():
     result_analysis_text = None
     return redirect(url_for('main.index'))
 
-# MJPEG Stream Generator
-# --- Generador de stream ---
+
 def generate_stream(camera_url):
     cap = cv2.VideoCapture(camera_url)
     while True:
@@ -338,7 +282,6 @@ def generate_stream(camera_url):
     cap.release()
 
 
-# --- Ruta de streaming ---
 @bp.route('/stream')
 @login_required
 def stream():
@@ -363,12 +306,10 @@ def capturar():
     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     captured_image = Image.fromarray(frame_rgb)
 
-    # Codificamos la imagen capturada a base64
     buffered = io.BytesIO()
     captured_image.save(buffered, format="PNG")
     result_image_data = base64.b64encode(buffered.getvalue()).decode()
 
-    # Reiniciamos análisis previo
     result_points = None
     result_analysis_text = None
 
@@ -382,14 +323,15 @@ def analizar():
     if captured_image is None:
         return redirect(url_for('main.chat_interface'))
 
-    # Redimensionar imagen para análisis
     image_resized = captured_image.resize(
         (800, int(800 * captured_image.size[1] / captured_image.size[0])),
         Image.Resampling.LANCZOS
     )
 
     try:
-        # Llamada al modelo Gemini
+        # 🔹 Medimos tiempo total de análisis
+        tiempo_inicio_general = datetime.utcnow()
+
         model = get_gemini_model()
         response = model.generate_content(
             contents=[
@@ -401,7 +343,7 @@ def analizar():
                 2. Para CADA objeto, genera un análisis detallado con el siguiente formato:
 
                 {
-                  "point": [y, x],  // coordenadas normalizadas 0-1000 (MANTENER ESTE FORMATO)
+                  "point": [y, x],
                   "label": "Nombre del objeto",
                   "analisis": {
                     "ubicacion": "Descripción de ubicación y posición",
@@ -409,14 +351,12 @@ def analizar():
                     "condicion": "Estado físico (intacto, roto, dañado, etc.)",
                     "indicios": "Huellas, fibras, manchas u otros indicios adheridos",
                     "pertinencia": "Relevancia para el caso investigado",
-                    "valor_probatorio": "Valor como evidencia",
+                    "valor_probatorio": "Clasifica como 'alto', 'medio' o 'bajo'",
                     "observaciones": "Notas adicionales importantes"
                   }
                 }
 
-                Devuelve SOLAMENTE un array JSON válido con estos objetos, sin texto adicional.
-                Los puntos deben estar en formato [y, x] y normalizados de 0 a 1000.
-                Las etiquetas deben estar en español.
+                Devuelve SOLAMENTE un array JSON válido.
                 """
             ],
             generation_config=GenerationConfig(
@@ -425,87 +365,78 @@ def analizar():
             )
         )
 
-        # Función para extraer JSON
+        tiempo_fin_general = datetime.utcnow()
+        duracion_total = (tiempo_fin_general - tiempo_inicio_general).total_seconds()
+
+        # 🔹 Función para extraer JSON
         def parse_json(response_text):
             try:
                 return json.loads(response_text)
             except json.JSONDecodeError:
-                # Intentar extraer JSON de bloques de código
-                lines = response_text.splitlines()
-                json_blocks = []
-                in_json_block = False
-                
-                for line in lines:
-                    if line.strip() in ["```json", "```"]:
-                        in_json_block = not in_json_block
-                        continue
-                    if in_json_block:
-                        json_blocks.append(line)
-                
-                if json_blocks:
-                    try:
-                        return json.loads("\n".join(json_blocks))
-                    except json.JSONDecodeError:
-                        pass
-                
-                # Último intento: buscar cualquier estructura que parezca JSON
                 import re
-                json_match = re.search(r'\[.*\]', response_text, re.DOTALL)
-                if json_match:
-                    try:
-                        return json.loads(json_match.group())
-                    except:
-                        pass
-                
-                # Fallback si todo falla
-                return [{"point": [500, 500], "label": "Error en análisis", "analisis": {}}]
+                match = re.search(r'\[.*\]', response_text, re.DOTALL)
+                return json.loads(match.group()) if match else []
 
-        # Codificar imagen para mostrarla luego
         buffered = io.BytesIO()
         image_resized.save(buffered, format="PNG")
         result_image_data = base64.b64encode(buffered.getvalue()).decode()
 
-        # Guardar puntos con análisis completo
         result_points = parse_json(response.text)
+
+        # 🔹 Agregar tiempos realistas por evidencia
+        for p in result_points:
+            p["fecha_identificacion"] = tiempo_fin_general.isoformat()
+            p["tiempo_inicio"] = tiempo_inicio_general.isoformat()
+            p["tiempo_fin"] = tiempo_fin_general.isoformat()
+            p["duracion_segundos"] = round(duracion_total, 3)  # segundos con 3 decimales
+
         result_analysis_text = response.text
-        print(f"Análisis exitoso. {len(result_points)} objetos detectados.")
-            
+
+        print(f"✅ Análisis exitoso. {len(result_points)} objetos detectados en {duracion_total:.3f} segundos.")
+        for i, p in enumerate(result_points, 1):
+            print(f"   Evidencia {i}: {p['label']} (duración total: {p['duracion_segundos']} s)")
+
     except Exception as e:
-        print(f"Error procesando respuesta: {e}")
+        print(f"❌ Error procesando respuesta: {e}")
         result_points = [{"point": [500, 500], "label": "Error en análisis", "analisis": {}}]
         result_analysis_text = f"Error procesando la respuesta del modelo: {str(e)}"
+
     finally:
-        # Redirigir de vuelta a la interfaz
         return redirect(url_for('main.chat_interface'))
-    
+
 
 @bp.route('/guardar_analisis', methods=['POST'])
 @login_required
 def guardar_analisis():
+    """
+    Guarda el análisis y sus evidencias, registrando:
+    - fecha_verificacion y usuario_verificador_id si la evidencia viene verificada.
+    - es_clave=True automáticamente si valor_probatorio es 'alto'.
+    - Calcula tiempo de inicio, fin y duración por evidencia.
+    """
     global captured_image, result_points
-    
+
     if not captured_image or not result_points:
         return jsonify({'error': 'No hay análisis para guardar'}), 400
-    
+
     try:
         descripcion = request.form.get('descripcion', '')
         ubicacion = request.form.get('ubicacion', '')
         caso = request.form.get('caso', '')
-        
-        # Redimensionar imagen para el análisis
+
+        # Redimensionar imagen analizada
         image_resized = captured_image.resize(
             (800, int(800 * captured_image.size[1] / captured_image.size[0])),
             Image.Resampling.LANCZOS
         )
-        
+
         # Convertir imágenes a bytes
         img_original_bytes = io.BytesIO()
         captured_image.save(img_original_bytes, format='PNG')
-        
         img_analizada_bytes = io.BytesIO()
         image_resized.save(img_analizada_bytes, format='PNG')
-        
-        # Crear nuevo análisis en la base de datos
+
+        # Crear análisis principal
         nuevo_analisis = Analisis(
             usuario_id=current_user.id,
             imagen_original=img_original_bytes.getvalue(),
@@ -514,12 +445,61 @@ def guardar_analisis():
             ubicacion_escena=ubicacion,
             caso_asociado=caso
         )
-        
         db.session.add(nuevo_analisis)
-        db.session.flush()  # Para obtener el ID del análisis
-        
-        # Crear evidencias
+        db.session.flush()  # ✅ obtener ID antes del commit
+
+        from dateutil.parser import parse
+
         for evidencia_data in result_points:
+            # --- Fecha de identificación ---
+            fecha_ident = evidencia_data.get("fecha_identificacion")
+            if fecha_ident:
+                try:
+                    fecha_ident = parse(fecha_ident)
+                except Exception:
+                    fecha_ident = datetime.utcnow()
+            else:
+                fecha_ident = datetime.utcnow()
+
+            # --- Tiempos por evidencia ---
+            tiempo_inicio_str = evidencia_data.get("tiempo_inicio")
+            tiempo_fin_str = evidencia_data.get("tiempo_fin")
+
+            try:
+                tiempo_inicio = parse(tiempo_inicio_str) if tiempo_inicio_str else fecha_ident
+                tiempo_fin = parse(tiempo_fin_str) if tiempo_fin_str else datetime.utcnow()
+                duracion_segundos = (tiempo_fin - tiempo_inicio).total_seconds()
+            except Exception:
+                tiempo_inicio = fecha_ident
+                tiempo_fin = datetime.utcnow()
+                duracion_segundos = (tiempo_fin - tiempo_inicio).total_seconds()
+
+            # --- Estado de verificación ---
+            verificada = evidencia_data.get("verificada", False)
+
+            # --- Valor probatorio ---
+            valor_probatorio = evidencia_data.get("analisis", {}).get("valor_probatorio", "").strip().lower()
+
+            # --- Definición automática ---
+            if valor_probatorio == "alto":
+                es_clave = True
+                omitida = False
+            elif verificada:
+                es_clave = True
+                omitida = False
+            else:
+                es_clave = False
+                omitida = True
+
+            # --- Campos de verificación ---
+            if verificada:
+                fecha_verificacion = datetime.utcnow()
+                usuario_verificador_id = current_user.id
+            else:
+                fecha_verificacion = None
+                usuario_verificador_id = None
+
+            # --- Creación de evidencia ---
             nueva_evidencia = Evidencia(
                 analisis_id=nuevo_analisis.id,
                 label=evidencia_data.get('label', ''),
@@ -530,22 +510,56 @@ def guardar_analisis():
                 condicion=evidencia_data.get('analisis', {}).get('condicion', ''),
                 indicios=evidencia_data.get('analisis', {}).get('indicios', ''),
                 pertinencia=evidencia_data.get('analisis', {}).get('pertinencia', ''),
-                valor_probatorio=evidencia_data.get('analisis', {}).get('valor_probatorio', ''),
-                observaciones=evidencia_data.get('analisis', {}).get('observaciones', '')
+                valor_probatorio=valor_probatorio,
+                observaciones=evidencia_data.get('analisis', {}).get('observaciones', ''),
+                fecha_identificacion=fecha_ident,
+                fecha_documentacion=datetime.utcnow(),
+                tiempo_inicio=tiempo_inicio,
+                tiempo_fin=tiempo_fin,
+                duracion_segundos=duracion_segundos,
+                es_clave=es_clave,
+                omitida=omitida,
+                verificada=verificada,
+                fecha_verificacion=fecha_verificacion,
+                usuario_verificador_id=usuario_verificador_id
             )
             db.session.add(nueva_evidencia)
-        
+
         db.session.commit()
-        
+
         return jsonify({
             'success': True,
             'analisis_id': nuevo_analisis.id,
             'message': 'Análisis guardado correctamente'
         })
-            
+
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': f'Error: {str(e)}'}), 500
+
+
+@bp.route('/marcar_verificado', methods=['POST'])
+@login_required
+def marcar_verificado():
+    data = request.get_json()
+    index = data.get("index")
+    estado = data.get("estado")
+    try:
+        index = int(index)
+        if 0 <= index < len(result_points):
+            result_points[index]["verificada"] = bool(estado)
+            if estado:
+                result_points[index]["es_clave"] = True
+                result_points[index]["omitida"] = False
+            else:
+                result_points[index]["es_clave"] = False
+                result_points[index]["omitida"] = True
+            return jsonify({"success": True})
+        else:
+            return jsonify({"error": "Índice fuera de rango"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 @bp.route('/analisis/<int:analisis_id>/exportar')
 @login_required
@@ -647,6 +661,49 @@ def analisis_usuarios():
 
     return render_template('informes.html', analisis_list=analisis_list)
 
+@bp.route('/analisis/<int:analisis_id>/indicadores')
+@login_required
+def indicadores_analisis(analisis_id):
+    evidencias = Evidencia.query.filter_by(analisis_id=analisis_id).all()
+
+    if not evidencias:
+        return jsonify({
+            "promedio_identificacion": 0,
+            "promedio_documentacion": 0,
+            "verificadas": 0
+        })
+
+    # --- Cálculos ---
+    total_tiempo_identificacion = 0
+    total_tiempo_documentacion = 0
+    count_identificacion = 0
+    count_documentacion = 0
+    verificadas = 0
+
+    for e in evidencias:
+        # Tiempo entre creación de Analisis y detección
+        if e.fecha_identificacion:
+            # Diferencia en segundos desde inicio del análisis
+            inicio = e.analisis.fecha_analisis
+            total_tiempo_identificacion += (e.fecha_identificacion - inicio).total_seconds()
+            count_identificacion += 1
+
+        # Tiempo entre identificación y documentación
+        if e.fecha_documentacion and e.fecha_identificacion:
+            total_tiempo_documentacion += (e.fecha_documentacion - e.fecha_identificacion).total_seconds()
+            count_documentacion += 1
+
+        if e.verificada:
+            verificadas += 1
+
+    promedio_identificacion = round(total_tiempo_identificacion / count_identificacion, 2) if count_identificacion else 0
+    promedio_documentacion = round(total_tiempo_documentacion / count_documentacion, 2) if count_documentacion else 0
+
+    return jsonify({
+        "promedio_identificacion": promedio_identificacion,  # segundos
+        "promedio_documentacion": promedio_documentacion,    # segundos
+        "verificadas": verificadas
+    })
 
 @bp.route('/chatbot', methods=['POST'])
 @login_required
@@ -694,3 +751,83 @@ def chatbot():
     respuesta_limpia = response.text.replace('**', '').replace('##', '').strip()
     
     return jsonify({'respuesta': respuesta_limpia})
+
+@bp.route('/configuracion')
+@login_required
+def configuracion():
+    return render_template('configuracion.html')
+
+@bp.route('/editar_usuario', methods=['POST'])
+@login_required
+def editar_usuario():
+    try:
+        # Obtener datos del formulario
+        nombre_completo = request.form.get('nombre_completo')
+        username = request.form.get('username')
+        camara_ip = request.form.get('camara_ip')
+        password_actual = request.form.get('password_actual')
+        nueva_password = request.form.get('nueva_password')
+        confirmar_password = request.form.get('confirmar_password')
+        
+        # Verificar que el usuario existe
+        usuario = Usuario.query.get(current_user.id)
+        if not usuario:
+            flash('Usuario no encontrado', 'error')
+            return redirect(url_for('main.configuracion'))
+        
+        # Validar username único (si se cambió)
+        if username != usuario.username:
+            usuario_existente = Usuario.query.filter_by(username=username).first()
+            if usuario_existente and usuario_existente.id != usuario.id:
+                flash('El nombre de usuario ya está en uso', 'error')
+                return redirect(url_for('main.configuracion'))
+            usuario.username = username
+        
+        # Actualizar campos básicos
+        usuario.nombre_completo = nombre_completo
+        usuario.camara_ip = camara_ip
+        
+        # Cambiar contraseña si se proporcionó
+        if password_actual and nueva_password and confirmar_password:
+            if not usuario.check_password(password_actual):
+                flash('La contraseña actual es incorrecta', 'error')
+                return redirect(url_for('main.configuracion'))
+            
+            if nueva_password != confirmar_password:
+                flash('Las nuevas contraseñas no coinciden', 'error')
+                return redirect(url_for('main.configuracion'))
+            
+            if len(nueva_password) < 6:
+                flash('La nueva contraseña debe tener al menos 6 caracteres', 'error')
+                return redirect(url_for('main.configuracion'))
+            
+            usuario.set_password(nueva_password)
+            flash('Contraseña actualizada correctamente', 'success')
+        
+        # Guardar cambios
+        db.session.commit()
+        flash('Perfil actualizado correctamente', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error al actualizar el perfil: {str(e)}', 'error')
+    
+    return redirect(url_for('main.configuracion'))
+
+@bp.route('/obtener_datos_usuario')
+@login_required
+def obtener_datos_usuario():
+    """Obtener datos del usuario para AJAX"""
+    usuario = Usuario.query.get(current_user.id)
+    if usuario:
+        return jsonify({
+            'id': usuario.id,
+            'username': usuario.username,
+            'nombre_completo': usuario.nombre_completo,
+            'rol': usuario.rol,
+            'fecha_creacion': usuario.fecha_creacion.strftime('%d/%m/%Y'),
+            'camara_ip': usuario.camara_ip or '',
+            'total_analisis': len(usuario.analisis),
+            'total_evidencias': sum(len(analisis.evidencias) for analisis in usuario.analisis)
+        })
+    return jsonify({'error': 'Usuario no encontrado'}), 404

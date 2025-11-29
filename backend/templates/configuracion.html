@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block title %}Configuración - PERIDOT Sistema Forense{% endblock %}
+
+{% block head %}
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='base.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='configuracion.css') }}">
+{% endblock %}
+
+{% block content %}
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1><i class="fas fa-cog me-2"></i>Configuración</h1>
+    <p class="page-subtitle">Gestiona tu perfil y preferencias del sistema</p>
+  </div>
+
+  <div class="settings-container">
+    <!-- Profile Card -->
+    <div class="settings-card">
+      <div class="settings-header">
+        <h2><i class="fas fa-user-circle me-2"></i>Perfil de Usuario</h2>
+        <p>Actualiza tu información personal y credenciales</p>
+      </div>
+      
+      <div class="settings-body">
+        <!-- Profile Overview -->
+        <div class="profile-section">
+          <div class="profile-avatar">
+            {{ current_user.nombre_completo[0] | upper }}
+          </div>
+          <div class="profile-info">
+            <h3>{{ current_user.nombre_completo }}</h3>
+            <p class="profile-role">{{ current_user.rol | title }}</p>
+            <p class="profile-meta">
+              <i class="fas fa-calendar-alt me-1"></i>
+              Miembro desde {{ current_user.fecha_creacion.strftime('%d/%m/%Y') }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Edit Form -->
+        <form method="POST" action="{{ url_for('main.editar_usuario') }}" id="userForm">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="form-label">Nombre Completo</label>
+                <input type="text" class="form-control" name="nombre_completo" 
+                       value="{{ current_user.nombre_completo }}" required>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="form-label">Nombre de Usuario</label>
+                <input type="text" class="form-control" name="username" 
+                       value="{{ current_user.username }}" required>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Dirección IP de Cámara</label>
+            <input type="text" class="form-control" name="camara_ip" 
+                   value="{{ current_user.camara_ip or '' }}" 
+                   placeholder="Ej: 192.168.1.100:8080">
+            <div class="form-text">
+              Dirección IP y puerto de la cámara para captura de evidencias
+            </div>
+          </div>
+
+          <!-- Password Change Section -->
+          <div class="password-section">
+            <h4 class="section-title">
+              <i class="fas fa-lock me-2"></i>Cambiar Contraseña
+            </h4>
+            <p class="section-subtitle">Deja en blanco si no deseas cambiar la contraseña</p>
+            
+            <div class="row">
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label class="form-label">Contraseña Actual</label>
+                  <input type="password" class="form-control" name="password_actual" 
+                         id="password_actual">
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label class="form-label">Nueva Contraseña</label>
+                  <input type="password" class="form-control" name="nueva_password" 
+                         id="nueva_password">
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="form-group">
+                  <label class="form-label">Confirmar Contraseña</label>
+                  <input type="password" class="form-control" name="confirmar_password" 
+                         id="confirmar_password">
+                </div>
+              </div>
+            </div>
+            
+            <div class="password-strength">
+              <div class="strength-bar">
+                <div class="strength-fill" id="strengthFill"></div>
+              </div>
+              <span class="strength-text" id="strengthText">Seguridad de la contraseña</span>
+            </div>
+          </div>
+
+          <!-- Form Actions -->
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-save me-2"></i>Guardar Cambios
+            </button>
+            <button type="button" class="btn btn-outline-secondary" onclick="resetForm()">
+              <i class="fas fa-undo me-2"></i>Restablecer
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- System Info Card -->
+    <div class="settings-card">
+      <div class="settings-header">
+        <h2><i class="fas fa-info-circle me-2"></i>Información del Sistema</h2>
+        <p>Detalles y estadísticas de tu cuenta</p>
+      </div>
+      
+      <div class="settings-body">
+        <div class="stats-grid">
+          <div class="stat-item">
+            <div class="stat-icon analysis">
+              <i class="fas fa-chart-bar"></i>
+            </div>
+            <div class="stat-info">
+              <span class="stat-number">{{ current_user.analisis | length }}</span>
+              <span class="stat-label">Análisis Realizados</span>
+            </div>
+          </div>
+          
+          <div class="stat-item">
+            <div class="stat-icon evidence">
+              <i class="fas fa-box-archive"></i>
+            </div>
+            <div class="stat-info">
+              <span class="stat-number">
+                {% set total_evidencias = namespace(value=0) %}
+                {% for analisis in current_user.analisis %}
+                  {% set total_evidencias.value = total_evidencias.value + analisis.evidencias | length %}
+                {% endfor %}
+                {{ total_evidencias.value }}
+              </span>
+              <span class="stat-label">Evidencias Procesadas</span>
+            </div>
+          </div>
+          
+          <div class="stat-item">
+            <div class="stat-icon role">
+              <i class="fas fa-user-tag"></i>
+            </div>
+            <div class="stat-info">
+              <span class="stat-number">{{ current_user.rol | title }}</span>
+              <span class="stat-label">Rol en el Sistema</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Password strength indicator
+  document.getElementById('nueva_password').addEventListener('input', function(e) {
+    const password = e.target.value;
+    const strengthFill = document.getElementById('strengthFill');
+    const strengthText = document.getElementById('strengthText');
+    
+    let strength = 0;
+    let text = 'Muy débil';
+    let color = '#e74c3c';
+    
+    if (password.length >= 6) strength += 25;
+    if (password.match(/[a-z]/) && password.match(/[A-Z]/)) strength += 25;
+    if (password.match(/\d/)) strength += 25;
+    if (password.match(/[^a-zA-Z\d]/)) strength += 25;
+    
+    if (strength >= 75) {
+      text = 'Fuerte';
+      color = '#27ae60';
+    } else if (strength >= 50) {
+      text = 'Media';
+      color = '#f39c12';
+    } else if (strength >= 25) {
+      text = 'Débil';
+      color = '#e67e22';
+    }
+    
+    strengthFill.style.width = strength + '%';
+    strengthFill.style.backgroundColor = color;
+    strengthText.textContent = text;
+    strengthText.style.color = color;
+  });
+  
+  // Form validation
+  document.getElementById('userForm').addEventListener('submit', function(e) {
+    const nuevaPassword = document.getElementById('nueva_password').value;
+    const confirmarPassword = document.getElementById('confirmar_password').value;
+    const passwordActual = document.getElementById('password_actual').value;
+    
+    // If any password field is filled, all must be filled
+    if (nuevaPassword || confirmarPassword || passwordActual) {
+      if (!passwordActual) {
+        e.preventDefault();
+        alert('Por favor ingresa tu contraseña actual para cambiar la contraseña');
+        return;
+      }
+      
+      if (nuevaPassword !== confirmarPassword) {
+        e.preventDefault();
+        alert('Las nuevas contraseñas no coinciden');
+        return;
+      }
+      
+      if (nuevaPassword.length < 6) {
+        e.preventDefault();
+        alert('La nueva contraseña debe tener al menos 6 caracteres');
+        return;
+      }
+    }
+  });
+  
+  function resetForm() {
+    document.getElementById('userForm').reset();
+    document.getElementById('strengthFill').style.width = '0%';
+    document.getElementById('strengthText').textContent = 'Seguridad de la contraseña';
+    document.getElementById('strengthText').style.color = '#6c757d';
+  }
+</script>
+{% endblock %}

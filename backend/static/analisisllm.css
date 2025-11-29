@@ -1,0 +1,1016 @@
+/*
+ * Archivo CSS para la aplicación de Análisis y Chat
+ * Estilos modernos con gradientes, transparencias y efectos de cristal (Glassmorphism)
+ */
+
+/* --- Estilos Globales y Base --- */
+
+/* Cuerpo de la aplicación */
+body {
+    /* Tipografía */
+    font-family: 'Inter', sans-serif;
+    /* Fondo con gradiente dinámico de tonos azules */
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #06b6d4 100%);
+    margin: 0;
+    /* Asegura que el gradiente cubra toda la altura de la ventana */
+    min-height: 100vh;
+    overflow-y: auto;
+}
+
+/* Contenedor principal de la aplicación */
+.app-content {
+    /* Efecto de Glassmorphism sutil */
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 2rem;
+    margin: 1rem;
+}
+
+/* Estilo para gradientes de texto */
+.text-gradient {
+    background: linear-gradient(90deg, #007bff, #00b894);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text; /* Compatibilidad moderna */
+}
+
+/* --- Componente Header/Encabezado (Efecto Glassmorphism Avanzado) --- */
+
+.header {
+    /* Fondo con ligero Glassmorphism */
+    background: linear-gradient(135deg, 
+        rgba(255, 255, 255, 0.95) 0%, 
+        rgba(255, 255, 255, 0.98) 50%, 
+        rgba(248, 250, 252, 0.95) 100%);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    border-radius: 20px;
+    padding: 3rem 2rem;
+    text-align: center;
+    margin-bottom: 2rem;
+    /* Sombra de caja elegante con luz interior */
+    box-shadow: 
+        0 20px 50px rgba(0, 0, 0, 0.08),
+        0 8px 32px rgba(0, 0, 0, 0.04),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    position: relative;
+    overflow: hidden;
+    /* Transición para el efecto hover */
+    transition: all 0.4s ease;
+}
+
+/* Efecto de brillo sutil (shimmer) */
+.header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(59, 130, 246, 0.03), 
+        transparent);
+    animation: headerShimmer 6s infinite;
+    z-index: 1;
+}
+
+@keyframes headerShimmer {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+/* Efecto hover para todo el header */
+.header:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+        0 25px 60px rgba(0, 0, 0, 0.12),
+        0 12px 40px rgba(0, 0, 0, 0.06),
+        inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+/* Título con gradiente de texto */
+.header h1 {
+    background: linear-gradient(135deg, 
+        #1e40af 0%, 
+        #3b82f6 30%, 
+        #0ea5e9 60%, 
+        #06b6d4 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 700;
+    font-size: 2.8rem;
+    margin-bottom: 0.5rem;
+    text-shadow: none;
+    position: relative;
+    z-index: 2;
+    letter-spacing: -0.02em;
+}
+
+/* Subtítulo */
+.subtitle {
+    color: #475569; /* Color ajustado para mejor contraste en el header */
+    font-size: 16px;
+    margin: 0;
+    font-weight: 500;
+    position: relative;
+    z-index: 2;
+    opacity: 0.9;
+}
+
+/* Botón de micrófono (Header) */
+.btn-outline-secondary {
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid #e2e8f0;
+    color: #475569;
+    border-radius: 12px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 2;
+    margin-top: 1rem;
+}
+
+.btn-outline-secondary:hover {
+    background: rgba(248, 250, 252, 0.95);
+    border-color: #cbd5e1;
+    color: #334155;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* --- Layout y Responsividad --- */
+
+.content-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+    margin-top: 1rem;
+}
+
+/* Media query para móviles */
+@media (max-width: 768px) {
+    .content-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Animación general de entrada de secciones */
+.stream-container, .chat-container {
+    animation: fadeInUp 0.6s ease;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* --- Contenedor de Stream/Video y Análisis --- */
+
+.stream-container {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 20px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.stream-container:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.2);
+}
+
+.card-header {
+    background: linear-gradient(135deg, #1e40af, #0ea5e9);
+    color: white;
+    padding: 1.5rem;
+    border: none;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Efecto shimmer en Card Header */
+.card-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+.card-header h5 {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.video-container {
+    position: relative;
+    background: linear-gradient(145deg, #f8fafc, #e2e8f0);
+    border-radius: 16px;
+    overflow: hidden;
+    margin: 1.5rem;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.video-container img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 16px;
+    transition: transform 0.3s ease;
+}
+
+.video-container:hover img {
+    transform: scale(1.02);
+}
+
+/* --- Sección de Controles y Botones --- */
+
+.controls {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: 0 1.5rem 1.5rem;
+}
+
+.btn {
+    border-radius: 12px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: none;
+    position: relative;
+    overflow: hidden;
+    white-space: nowrap; /* Evita que el texto del botón se rompa */
+}
+
+/* Botón Primario (Azul) */
+.btn-primary {
+    background: linear-gradient(135deg, #1e40af, #0ea5e9);
+    color: white;
+    box-shadow: 0 4px 15px rgba(30, 64, 175, 0.4);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(30, 64, 175, 0.6);
+}
+
+/* Botón Outline Primario (Borde Azul) */
+.btn-outline-primary {
+    background: transparent;
+    border: 2px solid #1e40af;
+    color: #1e40af;
+}
+
+.btn-outline-primary:hover {
+    background: linear-gradient(135deg, #1e40af, #0ea5e9);
+    border-color: transparent;
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* Botón Success (Verde) */
+.btn-success {
+    background: linear-gradient(135deg, #059669, #10b981);
+    color: white;
+    box-shadow: 0 4px 15px rgba(5, 150, 105, 0.4);
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, #047857, #059669);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(5, 150, 105, 0.6);
+}
+
+/* Estado deshabilitado */
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* --- Sección de Análisis e Imagen con Puntos Interactivos (Hotspots) --- */
+
+.analysis-section {
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 1.5rem;
+    margin-top: 1rem;
+}
+
+.analysis-section h6 {
+    color: #1e40af;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.image-container {
+    background: linear-gradient(145deg, #f8fafc, #e2e8f0);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.1);
+    position: relative;
+}
+
+/* Efecto de degradado sutil en la imagen */
+.image-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, 
+        rgba(30, 64, 175, 0.1) 0%, 
+        transparent 25%, 
+        transparent 75%, 
+        rgba(14, 165, 233, 0.1) 100%);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.point-overlay {
+    /* Asegura que los puntos sean interactivos dentro del contenedor */
+    pointer-events: auto;
+    z-index: 10;
+}
+
+/* Punto interactivo (Hotspot) */
+.point {
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    background: linear-gradient(135deg, #ff6b6b, #ee5a52); /* Rojo vibrante */
+    border: 3px solid white;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 4px 20px rgba(255, 107, 107, 0.4);
+    z-index: 15;
+}
+
+/* Efecto de pulso alrededor del punto */
+.point::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+    z-index: -1;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.5); opacity: 0.3; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.point:hover {
+    transform: translate(-50%, -50%) scale(1.4);
+    box-shadow: 0 8px 30px rgba(255, 107, 107, 0.6);
+}
+
+/* Etiqueta del punto (Tooltip) */
+.point-label {
+    position: absolute;
+    top: -50px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.9);
+    backdrop-filter: blur(10px);
+    color: white;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    opacity: 0;
+    transition: all 0.3s ease;
+    pointer-events: none;
+    z-index: 25;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.point:hover .point-label, .point-label.show {
+    opacity: 1;
+    top: -40px; /* Pequeño ajuste para el efecto de entrada */
+}
+
+.point-label::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: rgba(0, 0, 0, 0.9);
+}
+
+/* --- Scroll de Evidencias (Tarjetas) --- */
+
+.evidence-scroll {
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+    overflow-x: auto;
+    padding: 1rem 0;
+    max-height: none;
+    /* Comportamiento de scroll-snap para un scroll más controlado */
+    scroll-snap-type: x mandatory;
+}
+
+.evidence-scroll::-webkit-scrollbar {
+    height: 8px;
+}
+
+.evidence-scroll::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 10px;
+}
+
+.evidence-scroll::-webkit-scrollbar-thumb {
+    background: linear-gradient(90deg, #1e40af, #0ea5e9);
+    border-radius: 10px;
+}
+
+/* Tarjeta de Evidencia */
+.evidence-card {
+    flex: 0 0 250px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 1rem;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 2px 8px rgba(30, 64, 175, 0.08);
+    cursor: pointer;
+    scroll-snap-align: start;
+    position: relative;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(226, 232, 240, 0.6);
+}
+
+.evidence-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(30, 64, 175, 0.15);
+    background: rgba(255, 255, 255, 0.98);
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+/* Estilo para la tarjeta activa/seleccionada */
+.evidence-card.active {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2), 
+                0 8px 25px rgba(30, 64, 175, 0.2);
+    background: rgba(59, 130, 246, 0.03);
+    transform: translateY(-2px);
+}
+
+/* Borde izquierdo activo */
+.evidence-card.active::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(135deg, #1e40af, #0ea5e9);
+    border-radius: 0 2px 2px 0;
+}
+
+.evidence-number {
+    background: linear-gradient(135deg, #1e40af, #0ea5e9);
+    color: white;
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+    flex-shrink: 0;
+    position: relative;
+}
+
+/* Pulso para el número de evidencia */
+.evidence-number::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(135deg, #1e40af, #0ea5e9);
+    border-radius: 14px;
+    opacity: 0.3;
+    z-index: -1;
+    animation: pulse-evidence 2s infinite;
+}
+
+@keyframes pulse-evidence {
+    0%, 100% { transform: scale(1); opacity: 0.3; }
+    50% { transform: scale(1.1); opacity: 0.1; }
+}
+
+.evidence-content {
+    flex: 1;
+    min-width: 0;
+    margin-left: 1rem; /* Espacio entre el número y el contenido */
+}
+
+.evidence-content h6 {
+    color: #1e40af;
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.evidence-content h6::before {
+    content: '🔍';
+    font-size: 14px;
+}
+
+.evidence-content p {
+    color: #64748b;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    margin: 0;
+    font-weight: 500;
+}
+
+.evidence-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(59, 130, 246, 0.1);
+    width: 100%; /* Asegura que la meta ocupe todo el ancho */
+}
+
+.evidence-status {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    background: rgba(34, 197, 94, 0.1);
+    color: #16a34a;
+    font-weight: 600;
+    border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.evidence-timestamp {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+/* Etiquetas (Badges) */
+.badges-top-left {
+    position: absolute;
+    top: 8px;
+    right: 8px; 
+    left: auto; 
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: flex-end;
+}
+
+.clave-badge, .verificada-badge {
+    text-align: right;
+    margin-left: auto;
+    animation-duration: 2s;
+    animation-iteration-count: infinite;
+    border: 1px solid white;
+    font-weight: 600;
+    font-size: 0.75rem !important;
+    padding: 4px 8px;
+    border-radius: 12px; /* Uniformidad con otros elementos */
+    color: white; /* Color de texto blanco para los badges */
+}
+
+.clave-badge {
+    animation-name: pulse-clave;
+    background: linear-gradient(135deg, #dc2626, #ef4444) !important; /* Rojo */
+}
+
+.verificada-badge {
+    animation-name: pulse-verificada;
+    background: linear-gradient(135deg, #059669, #10b981) !important; /* Verde */
+}
+
+@keyframes pulse-clave {
+    0%, 100% { 
+        transform: scale(1); 
+        box-shadow: 0 2px 8px rgba(220, 38, 38, 0.4);
+    }
+    50% { 
+        transform: scale(1.05); 
+        box-shadow: 0 3px 12px rgba(220, 38, 38, 0.6);
+    }
+}
+
+@keyframes pulse-verificada {
+    0%, 100% { 
+        transform: scale(1); 
+        box-shadow: 0 2px 8px rgba(34, 197, 94, 0.4);
+    }
+    50% { 
+        transform: scale(1.05); 
+        box-shadow: 0 3px 12px rgba(34, 197, 94, 0.6);
+    }
+}
+
+/* Estilos de la tarjeta basados en el badge */
+.evidence-card:has(.clave-badge) {
+    border: 1px solid rgba(220, 38, 38, 0.4); /* Borde más visible para 'clave' */
+}
+
+.evidence-card.verificada {
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(220, 252, 231, 0.1));
+}
+
+
+/* --- Sección de Guardado de Análisis --- */
+
+.save-analysis-section {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-top: 1rem;
+    color: white; /* Asegura que el texto sea legible sobre el fondo oscuro/transparente */
+}
+
+.save-analysis-section h6 {
+    color: white;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+/* --- Contenedor de Chat y Mensajes --- */
+
+.chat-container {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 20px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+    height: fit-content;
+    overflow: hidden;
+}
+
+.chat-input-section {
+    padding: 1.5rem;
+    border-top: 1px solid #e2e8f0; /* Borde sólido para separar del chat */
+    background: rgba(255, 255, 255, 0.98); /* Fondo claro para el input */
+}
+
+.input-group-modern {
+    display: flex;
+    border: 2px solid #cbd5e1; /* Borde más claro para el input group */
+    border-radius: 25px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+}
+
+.input-group-modern:focus-within {
+    border-color: #1e40af;
+    box-shadow: 0 0 0 4px rgba(30, 64, 175, 0.2);
+    transform: scale(1.0); /* Eliminé el scale para evitar un comportamiento extraño */
+}
+
+/* Estilo para inputs de formulario modernos (uso general) */
+.form-control-modern {
+    background: transparent; /* Usamos el fondo del input-group */
+    border: none; /* Quitamos los bordes internos */
+    outline: none;
+    padding: 14px 18px;
+    font-size: 14px;
+    flex: 1;
+    font-weight: 500;
+    width: 100%; /* Para que ocupe todo el espacio en otros contextos */
+}
+
+.form-control-modern:focus {
+    /* El foco se maneja en el .input-group-modern */
+    box-shadow: none;
+    outline: none;
+}
+
+/* Anillo de foco alternativo para inputs simples */
+.focus-ring:focus {
+    border-color: #00b894 !important;
+    box-shadow: 0 0 8px rgba(0, 184, 148, 0.4);
+}
+
+.btn-send {
+    background: linear-gradient(135deg, #1e40af, #0ea5e9);
+    color: white;
+    border: none;
+    padding: 14px 18px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0; /* Evita que se encoja */
+    border-radius: 0 25px 25px 0;
+}
+
+.btn-send::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.btn-send:hover::before {
+    left: 100%;
+}
+
+.btn-send:hover {
+    transform: scale(1.0); /* Evitar el scale si el input-group ya tiene uno */
+    box-shadow: 0 4px 15px rgba(30, 64, 175, 0.4);
+}
+
+/* Contenedor de mensajes */
+.chat-messages {
+    max-height: 450px;
+    overflow-y: auto;
+    padding: 1rem;
+}
+
+.chat-messages::-webkit-scrollbar {
+    width: 6px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+    background: #f1f5f9; /* Fondo claro para el track */
+    border-radius: 10px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #1e40af, #0ea5e9);
+    border-radius: 10px;
+}
+
+.message {
+    margin-bottom: 1.5rem;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.message-bubble {
+    padding: 14px 18px;
+    border-radius: 20px;
+    max-width: 85%;
+    word-wrap: break-word;
+    position: relative;
+    font-weight: 500;
+    line-height: 1.5;
+}
+
+/* Burbuja de mensaje del usuario */
+.user-message {
+    display: flex;
+    justify-content: flex-end;
+}
+.user-message .message-bubble {
+    background: linear-gradient(135deg, #1e40af, #0ea5e9);
+    color: white;
+    border-bottom-right-radius: 8px;
+    box-shadow: 0 4px 15px rgba(30, 64, 175, 0.3);
+}
+
+/* Burbuja de mensaje del bot */
+.bot-message {
+    display: flex;
+    justify-content: flex-start;
+}
+.bot-message .message-bubble {
+    background: #f8f9fa; /* Fondo más sólido para el bot */
+    backdrop-filter: blur(10px);
+    color: #1f2937;
+    border: 1px solid #e2e8f0;
+    border-bottom-left-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.message-time {
+    font-size: 11px;
+    color: #6b7280;
+    margin-top: 6px;
+    font-weight: 500;
+    /* Ajuste de posición */
+    text-align: right;
+    display: block;
+}
+
+.bot-message .message-time {
+    text-align: left;
+}
+
+/* Animación de Carga (Loading) */
+.loading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.loading-dots {
+    display: flex;
+    gap: 6px;
+}
+
+.loading-dot {
+    width: 8px;
+    height: 8px;
+    background: linear-gradient(135deg, #1e40af, #0ea5e9);
+    border-radius: 50%;
+    animation: loadingDot 1.4s infinite ease-in-out;
+}
+
+.loading-dot:nth-child(1) { animation-delay: 0s; }
+.loading-dot:nth-child(2) { animation-delay: 0.2s; }
+.loading-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes loadingDot {
+    0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+    40% { transform: scale(1.3); opacity: 1; }
+}
+
+/* --- Pantalla de Carga Global (Overlay) --- */
+
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.loading-overlay.show {
+    display: flex;
+}
+
+.loading-content {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    padding: 3rem 2rem;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+    max-width: 400px;
+    width: 90%;
+}
+
+.loading-spinner {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 2rem;
+    border: 4px solid rgba(30, 64, 175, 0.2);
+    border-top: 4px solid #1e40af;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+    color: #1e40af;
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.loading-subtext {
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+/* --- Botón Flotante de Voz --- */
+
+.floating-voice-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #1e40af, #0ea5e9);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    box-shadow: 0 8px 25px rgba(30, 64, 175, 0.4);
+    transition: all 0.3s ease;
+    z-index: 1000;
+    border: 3px solid rgba(255, 255, 255, 0.2);
+}
+
+.floating-voice-btn:hover {
+    transform: translateY(-5px) scale(1.1);
+    box-shadow: 0 15px 35px rgba(30, 64, 175, 0.6);
+    background: linear-gradient(135deg, #0ea5e9, #06b6d4);
+}
+
+.floating-voice-btn:active {
+    transform: translateY(-3px) scale(1.05);
+    background: linear-gradient(135deg, #1e40af, #1d4ed8);
+}
+
+/* Animación de pulso cuando está activo (escuchando) */
+.floating-voice-btn.listening {
+    animation: voicePulse 1s infinite;
+    background: linear-gradient(135deg, #dc2626, #ef4444); /* Rojo de grabación */
+}
+
+@keyframes voicePulse {
+    0%, 100% { 
+        transform: translateY(-5px) scale(1.1); 
+        box-shadow: 0 15px 35px rgba(220, 38, 38, 0.6);
+    }
+    50% { 
+        transform: translateY(-5px) scale(1.2); 
+        box-shadow: 0 20px 40px rgba(220, 38, 38, 0.8);
+    }
+}
+
+/* --- Estilos de Modal (Si estás usando Bootstrap o similar) --- */
+
+.modal-backdrop {
+    z-index: 1040;
+}
+
+.modal {
+    z-index: 1050;
+}
+
+.modal.show {
+    display: block;
+    z-index: 1060;
+}

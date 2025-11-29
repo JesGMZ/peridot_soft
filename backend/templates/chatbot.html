@@ -890,6 +890,71 @@
     box-shadow: 0 20px 40px rgba(220, 38, 38, 0.8);
   }
 }
+
+    .badges-top-left {
+      position: absolute;
+      top: 8px;
+      right: 8px; 
+      left: auto; 
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      align-items: flex-end;
+    }
+
+    /* Estilos individuales para las etiquetas */
+    .clave-badge, .verificada-badge {
+      text-align: right;
+      margin-left: auto;
+      animation-duration: 2s;
+      animation-iteration-count: infinite;
+      border: 1px solid white;
+      font-weight: 600;
+      font-size: 0.75rem !important;
+      padding: 4px 8px;
+    }
+
+    .clave-badge {
+      animation-name: pulse-clave;
+      background: linear-gradient(135deg, #dc2626, #ef4444) !important;
+    }
+
+    .verificada-badge {
+      animation-name: pulse-verificada;
+      background: linear-gradient(135deg, #059669, #10b981) !important;
+    }
+
+    @keyframes pulse-clave {
+      0%, 100% { 
+        transform: scale(1); 
+        box-shadow: 0 2px 8px rgba(220, 38, 38, 0.4);
+      }
+      50% { 
+        transform: scale(1.05); 
+        box-shadow: 0 3px 12px rgba(220, 38, 38, 0.6);
+      }
+    }
+
+    @keyframes pulse-verificada {
+      0%, 100% { 
+        transform: scale(1); 
+        box-shadow: 0 2px 8px rgba(34, 197, 94, 0.4);
+      }
+      50% { 
+        transform: scale(1.05); 
+        box-shadow: 0 3px 12px rgba(34, 197, 94, 0.6);
+      }
+    }
+
+    .evidence-card:has(.clave-badge) {
+      border: 1px solid rgba(220, 38, 38, 0.2);
+    }
+
+    .evidence-card.verificada {
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(220, 252, 231, 0.1));
+    }
   </style>
 </head>
 <body>
@@ -1010,11 +1075,19 @@
                 {% endif %}
               </div>
 
-              <!-- Controles -->
+             <!-- Controles -->
               <div class="controls mb-3">
                 <form action="{{ url_for('main.capturar') }}">
                   <button class="btn btn-primary me-2" type="submit">
                     <i class="fas fa-camera"></i> Capturar Imagen
+                  </button>
+                </form>
+
+                <!-- Formulario para subir imagen -->
+                <form id="uploadForm" enctype="multipart/form-data" class="d-inline">
+                  <input type="file" id="imageInput" accept="image/*" style="display: none;">
+                  <button type="button" class="btn btn-outline-primary me-2" onclick="document.getElementById('imageInput').click()">
+                    <i class="fas fa-upload"></i> Subir Imagen
                   </button>
                 </form>
 
@@ -1031,75 +1104,95 @@
                 {% endif %}
               </div>
 
-              <!-- Panel de Evidencias -->
-              {% if img_data and points_list %}
-                <div class="evidence-scroll">
-                  {% for punto in points_list %}
-                    {% if punto.point %}
-                      <div class="evidence-card card p-2 mb-2" data-point-id="{{ loop.index }}">
-                        <div class="evidence-card-body">
-                          <div class="evidence-number fw-bold">#{{ loop.index }}</div>
-                          <h6 class="text-primary mb-1">Evidencia {{ loop.index }}</h6>
-                          <p class="text-muted small mb-2">{{ punto.label }}</p>
-                          
-                          <button type="button" class="btn btn-sm btn-outline-primary" 
-                                  data-bs-toggle="modal" 
-                                  data-bs-target="#modalEvidencia{{ loop.index }}">
-                            Ver detalles
-                          </button>
-                        </div>
+            <!-- Panel de Evidencias -->
+            {% if img_data and points_list %}
+              <div class="evidence-scroll">
+                {% for punto in points_list %}
+                  {% if punto.point %}
+                    <div class="evidence-card card p-2 mb-2 position-relative {% if punto.verificado or punto.verificada %}verificada{% endif %}" 
+                        data-point-id="{{ loop.index }}" 
+                        id="evidence-card-{{ loop.index }}">
+                      
+                      <!-- Contenedor para ambas etiquetas en la esquina superior izquierda -->
+                      <div class="badges-top-left">
+                        <!-- Etiqueta VERIFICADA -->
+                        {% if punto.verificado or punto.verificada %}
+                          <span class="badge verificada-badge rounded-pill shadow-sm">
+                            <i class="fas fa-check-circle me-1"></i> VERIFICADA
+                          </span>
+                        {% endif %}
+                        
+                        <!-- Etiqueta CLAVE -->
+                        {% if punto.analisis and punto.analisis.valor_probatorio and punto.analisis.valor_probatorio.lower() == 'alto' %}
+                          <span class="badge clave-badge rounded-pill shadow-sm">
+                            <i class="fas fa-key me-1"></i> CLAVE
+                          </span>
+                        {% endif %}
                       </div>
-                    {% endif %}
-                  {% endfor %}
+                      
+                      <div class="evidence-card-body pt-2">
+                        <div class="evidence-number fw-bold">#{{ loop.index }}</div>
+                        <h6 class="text-primary mb-1">Evidencia {{ loop.index }}</h6>
+                        <p class="text-muted small mb-2">{{ punto.label }}</p>
+                        
+                        <button type="button" class="btn btn-sm btn-outline-primary" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#modalEvidencia{{ loop.index }}">
+                          Ver detalles
+                        </button>
+                      </div>
+                    </div>
+                  {% endif %}
+                {% endfor %}
+              </div>
+
+            <!-- Sección de Guardado de Análisis -->
+            <div class="save-analysis-section bg-white p-4 rounded-4 shadow-lg border border-2 border-light">
+              <h5 class="mb-4 fw-bold text-gradient">
+                <i class="fas fa-save me-2"></i> Datos del análisis preliminar
+              </h5>
+
+              <form id="saveAnalysisForm">
+                <div class="row g-4">
+                  <!-- Descripción -->
+                  <div class="col-md-6">
+                    <label for="descripcion" class="form-label fw-semibold text-muted">📝 Descripción del Caso</label>
+                    <textarea 
+                      class="form-control shadow-sm rounded-3 focus-ring" 
+                      id="descripcion" 
+                      name="descripcion" 
+                      rows="4"
+                      placeholder="Redacta una breve descripción del caso investigado..."></textarea>
+                  </div>
+
+                  <!-- Ubicación y Número de Caso -->
+                  <div class="col-md-6">
+                    <label for="ubicacion" class="form-label fw-semibold text-muted">📍 Ubicación de la Escena</label>
+                    <input 
+                      type="text" 
+                      class="form-control shadow-sm rounded-3 mb-3 focus-ring" 
+                      id="ubicacion" 
+                      name="ubicacion" 
+                      placeholder="Ejemplo: Av. Principal 123, Lima - Perú">
+
+                    <label for="caso" class="form-label fw-semibold text-muted">🔖 Número de Caso</label>
+                    <input 
+                      type="text" 
+                      class="form-control shadow-sm rounded-3 focus-ring" 
+                      id="caso" 
+                      name="caso" 
+                      placeholder="Ejemplo: CASE-2025-001">
+                  </div>
                 </div>
 
-<!-- Sección de Guardado de Análisis -->
-<div class="save-analysis-section bg-white p-4 rounded-4 shadow-lg border border-2 border-light">
-  <h5 class="mb-4 fw-bold text-gradient">
-    <i class="fas fa-save me-2"></i> Datos del análisis preliminar
-  </h5>
-
-  <form id="saveAnalysisForm">
-    <div class="row g-4">
-      <!-- Descripción -->
-      <div class="col-md-6">
-        <label for="descripcion" class="form-label fw-semibold text-muted">📝 Descripción del Caso</label>
-        <textarea 
-          class="form-control shadow-sm rounded-3 focus-ring" 
-          id="descripcion" 
-          name="descripcion" 
-          rows="4"
-          placeholder="Redacta una breve descripción del caso investigado..."></textarea>
-      </div>
-
-      <!-- Ubicación y Número de Caso -->
-      <div class="col-md-6">
-        <label for="ubicacion" class="form-label fw-semibold text-muted">📍 Ubicación de la Escena</label>
-        <input 
-          type="text" 
-          class="form-control shadow-sm rounded-3 mb-3 focus-ring" 
-          id="ubicacion" 
-          name="ubicacion" 
-          placeholder="Ejemplo: Av. Principal 123, Lima - Perú">
-
-        <label for="caso" class="form-label fw-semibold text-muted">🔖 Número de Caso</label>
-        <input 
-          type="text" 
-          class="form-control shadow-sm rounded-3 focus-ring" 
-          id="caso" 
-          name="caso" 
-          placeholder="Ejemplo: CASE-2025-001">
-      </div>
-    </div>
-
-    <!-- Botón Guardar -->
-    <div class="text-center mt-4">
-      <button type="button" class="btn btn-success btn-lg px-5 py-2 shadow-sm rounded-pill" onclick="saveAnalysis()">
-        <i class="fas fa-database me-2"></i> Guardar análisis
-      </button>
-    </div>
-  </form>
-</div>
+                <!-- Botón Guardar -->
+                <div class="text-center mt-4">
+                  <button type="button" class="btn btn-success btn-lg px-5 py-2 shadow-sm rounded-pill" onclick="saveAnalysis()">
+                    <i class="fas fa-database me-2"></i> Guardar análisis
+                  </button>
+                </div>
+              </form>
+            </div>
 
 
               {% endif %}
@@ -1208,7 +1301,8 @@
                   <div class="mb-3">
                     <h6 class="text-primary">Estado de Verificación</h6>
                     <div class="form-check">
-                      <input class="form-check-input" type="checkbox" id="verificado{{ loop.index }}">
+                      <input class="form-check-input" type="checkbox" id="verificado{{ loop.index }}" 
+                            {% if punto.verificado or punto.verificada %}checked{% endif %}>
                       <label class="form-check-label" for="verificado{{ loop.index }}">
                         Marcar como verificado
                       </label>
@@ -1584,6 +1678,168 @@
     utterance.lang = "es-ES";
     window.speechSynthesis.speak(utterance);
   }
+
+  // Manejar la subida de imágenes
+document.getElementById('imageInput').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validar tipo de archivo
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/bmp', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+        alert('Formato de archivo no válido. Use: PNG, JPG, JPEG, GIF, BMP, WEBP');
+        return;
+    }
+
+    // Validar tamaño (máximo 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+        alert('La imagen es demasiado grande. Máximo 10MB permitido.');
+        return;
+    }
+
+    uploadImage(file);
+});
+
+async function uploadImage(file) {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+        showLoading();
+        
+        const response = await fetch('{{ url_for("main.upload_image") }}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            // Recargar la página para mostrar la imagen subida
+            location.reload();
+        } else {
+            throw new Error(result.error || 'Error al subir la imagen');
+        }
+
+    } catch (error) {
+        hideLoading();
+        console.error('Error al subir imagen:', error);
+        alert('Error al subir la imagen: ' + error.message);
+    }
+}
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  {% for punto in points_list %}
+    const check{{ loop.index }} = document.getElementById("verificado{{ loop.index }}");
+    if (check{{ loop.index }}) {
+      check{{ loop.index }}.addEventListener("change", function () {
+        fetch("{{ url_for('main.marcar_verificado') }}", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            index: {{ loop.index0 }},  // índice en la lista result_points
+            estado: this.checked
+          })
+        })
+        .then(r => r.json())
+        .then(data => {
+          if (!data.success) {
+            alert("Error al actualizar verificación temporal");
+          }
+        })
+        .catch(err => console.error(err));
+      });
+    }
+  {% endfor %}
+});
+</script>
+
+<script>
+// Función para marcar como verificado y actualizar la interfaz
+function toggleVerificacion(index, estado) {
+  const evidenceCard = document.getElementById(`evidence-card-${index}`);
+  if (!evidenceCard) return;
+  
+  const badgesContainer = evidenceCard.querySelector('.badges-top-left');
+  if (!badgesContainer) return;
+  
+  // Buscar o crear la etiqueta VERIFICADA
+  let verificadaBadge = badgesContainer.querySelector('.verificada-badge');
+  
+  if (estado) {
+    if (!verificadaBadge) {
+      // Crear la etiqueta VERIFICADA si no existe
+      verificadaBadge = document.createElement('span');
+      verificadaBadge.className = 'badge verificada-badge rounded-pill shadow-sm';
+      verificadaBadge.innerHTML = '<i class="fas fa-check-circle me-1"></i> VERIFICADA';
+      
+      // Insertar al principio del contenedor
+      badgesContainer.insertBefore(verificadaBadge, badgesContainer.firstChild);
+    }
+    evidenceCard.classList.add('verificada');
+  } else {
+    // Remover la etiqueta VERIFICADA
+    if (verificadaBadge) {
+      verificadaBadge.remove();
+    }
+    evidenceCard.classList.remove('verificada');
+  }
+}
+
+// Actualizar el event listener para los checkboxes
+document.addEventListener("DOMContentLoaded", function () {
+  {% for punto in points_list %}
+    const check{{ loop.index }} = document.getElementById("verificado{{ loop.index }}");
+    if (check{{ loop.index }}) {
+      // Establecer estado inicial basado en los datos
+      {% if punto.verificado or punto.verificada %}
+        check{{ loop.index }}.checked = true;
+        toggleVerificacion({{ loop.index }}, true);
+      {% endif %}
+      
+      check{{ loop.index }}.addEventListener("change", function () {
+        const isChecked = this.checked;
+        
+        // Actualizar interfaz inmediatamente
+        toggleVerificacion({{ loop.index }}, isChecked);
+        
+        // Enviar al servidor
+        fetch("{{ url_for('main.marcar_verificado') }}", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            index: {{ loop.index0 }},
+            estado: isChecked
+          })
+        })
+        .then(r => {
+          if (!r.ok) {
+            throw new Error('Error en la respuesta del servidor');
+          }
+          return r.json();
+        })
+        .then(data => {
+          if (!data.success) {
+            throw new Error(data.error || 'Error desconocido');
+          }
+          console.log('Verificación actualizada correctamente');
+        })
+        .catch(err => {
+          console.error('Error:', err);
+          // Revertir cambios si hay error
+          check{{ loop.index }}.checked = !isChecked;
+          toggleVerificacion({{ loop.index }}, !isChecked);
+          alert("Error al actualizar verificación: " + err.message);
+        });
+      });
+    }
+  {% endfor %}
+});
 </script>
 
 </body>

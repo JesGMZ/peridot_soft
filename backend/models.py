@@ -2,8 +2,7 @@ from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
-
-# Usar la misma instancia de db que se crea en __init__.py
+from sqlalchemy import Numeric
 from backend import db
 
 class Usuario(db.Model, UserMixin):
@@ -18,7 +17,7 @@ class Usuario(db.Model, UserMixin):
     camara_ip = db.Column(db.Text)
     # Relación con análisis
     analisis = db.relationship('Analisis', backref='usuario', lazy=True)
-    
+
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
     
@@ -39,9 +38,18 @@ class Analisis(db.Model):
     descripcion = db.Column(db.Text)
     ubicacion_escena = db.Column(db.String(200))
     caso_asociado = db.Column(db.String(100))
-    
+
+    # --- NUEVO: para métricas globales del análisis ---
+    tiempo_total = db.Column(db.Interval)  # Duración total del análisis
+    numero_evidencias = db.Column(db.Integer, default=0)  # Evidencias totales detectadas
+
     # Relación con evidencias
-    evidencias = db.relationship('Evidencia', backref='analisis', lazy=True, cascade='all, delete-orphan')
+    evidencias = db.relationship(
+        'Evidencia',
+        backref='analisis',
+        lazy=True,
+        cascade='all, delete-orphan'
+    )
     
     def __repr__(self):
         return f'<Analisis {self.id} - {self.caso_asociado}>'
@@ -61,8 +69,22 @@ class Evidencia(db.Model):
     pertinencia = db.Column(db.Text)
     valor_probatorio = db.Column(db.Text)
     observaciones = db.Column(db.Text)
-    verificada = db.Column(db.Boolean, default=False)
+
+    # --- NUEVOS CAMPOS PARA INDICADORES ---
+    fecha_identificacion = db.Column(db.DateTime, default=datetime.utcnow)   # Cuándo fue detectada
+    fecha_documentacion = db.Column(db.DateTime)                             # Cuándo terminó su documentación
+    tiempo_inicio = db.Column(db.DateTime, nullable=True)
+    tiempo_fin = db.Column(db.DateTime, nullable=True)
+    duracion_segundos = db.Column(Numeric(10, 2), nullable=True)
+    es_clave = db.Column(db.Boolean, default=False, index=True)               # Evidencia clave
+    omitida = db.Column(db.Boolean, default=False, index=True)                 # Si fue omitida
+    verificada = db.Column(db.Boolean, default=False, index=True)             # Validación por experto
     fecha_verificacion = db.Column(db.DateTime)
-    
+    usuario_verificador_id = db.Column(
+        db.Integer,
+        db.ForeignKey('usuarios.id'),
+        index=True
+    )  # Quién validó
+
     def __repr__(self):
         return f'<Evidencia {self.id} - {self.label}>'
