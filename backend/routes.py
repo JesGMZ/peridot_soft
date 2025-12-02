@@ -7,8 +7,6 @@ import io
 import base64
 import json
 import cv2
-import subprocess
-import ffmpeg
 import time
 import numpy as np
 import google.generativeai as genai
