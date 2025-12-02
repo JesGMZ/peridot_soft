@@ -7,6 +7,10 @@ import io
 import base64
 import json
 import cv2
+import subprocess
+import ffmpeg
+import time
+import numpy as np
 import google.generativeai as genai
 from google.generativeai.types import GenerationConfig
 from reportlab.lib.pagesizes import A4
@@ -268,19 +272,120 @@ def reset():
     result_analysis_text = None
     return redirect(url_for('main.index'))
 
-
 def generate_stream(camera_url):
-    cap = cv2.VideoCapture(camera_url)
+    """
+    Genera stream usando solo OpenCV con mejor manejo de errores
+    """
+    print(f"Conectando con OpenCV a: {camera_url}")
+    
+    # Variables de control
+    MAX_RECONNECT_ATTEMPTS = 5
+    reconnect_delay = 2
+    last_frame_time = time.time()
+    TIMEOUT_SECONDS = 30  # Timeout de 30 segundos
+    
     while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
-        _, buffer = cv2.imencode('.jpg', frame)
-        frame_bytes = buffer.tobytes()
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
-    cap.release()
+        cap = None
+        try:
+            # Configurar captura de video con parámetros específicos para RTSP
+            cap = cv2.VideoCapture(camera_url, cv2.CAP_FFMPEG)
+            
+            # Configuraciones para RTSP
+            cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+            cap.set(cv2.CAP_PROP_FPS, 15)
+            cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 360)
+            
+            # Configurar timeout (en milisegundos)
+            cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 30000)
+            
+            if not cap.isOpened():
+                print(f"Error: No se pudo abrir la cámara: {camera_url}")
+                error_frame = create_error_image("No se pudo conectar")
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + 
+                       error_frame + b'\r\n')
+                time.sleep(reconnect_delay)
+                continue
+            
+            print("Cámara conectada correctamente")
+            reconnect_delay = 2  # Resetear delay después de conexión exitosa
+            
+            while True:
+                try:
+                    # Verificar timeout
+                    current_time = time.time()
+                    if current_time - last_frame_time > TIMEOUT_SECONDS:
+                        print(f"Timeout: No se recibieron frames por {TIMEOUT_SECONDS} segundos")
+                        break
+                    
+                    # Leer frame
+                    ret, frame = cap.read()
+                    
+                    if not ret:
+                        print("Error leyendo frame, reintentando...")
+                        # Contador de frames fallidos consecutivos
+                        time.sleep(0.1)
+                        continue
+                    
+                    # Actualizar tiempo del último frame exitoso
+                    last_frame_time = current_time
+                    
+                    # Redimensionar si es necesario para reducir carga
+                    frame = cv2.resize(frame, (640, 360))
+                    
+                    # Codificar a JPEG con calidad media
+                    encode_param = [cv2.IMWRITE_JPEG_QUALITY, 70]
+                    ret, jpeg = cv2.imencode('.jpg', frame, encode_param)
+                    
+                    if ret:
+                        frame_bytes = jpeg.tobytes()
+                        yield (b'--frame\r\n'
+                               b'Content-Type: image/jpeg\r\n\r\n' + 
+                               frame_bytes + b'\r\n')
+                    else:
+                        print("Error codificando imagen")
+                    
+                    # Controlar FPS
+                    time.sleep(0.066)  # ~15 FPS para reducir carga
+                    
+                except Exception as e:
+                    print(f"Error procesando frame: {e}")
+                    break
+                    
+        except Exception as e:
+            print(f"Error en stream principal: {e}")
+            
+        finally:
+            # Liberar recursos
+            if cap is not None:
+                cap.release()
+            
+        # Esperar antes de reconectar
+        print(f"Reconectando en {reconnect_delay} segundos...")
+        time.sleep(reconnect_delay)
+        
+        # Aumentar delay exponencialmente hasta máximo
+        reconnect_delay = min(reconnect_delay * 1.5, 10)
 
+def create_error_image(message):
+    """Crear una imagen de error simple"""
+
+    # Crear imagen negra
+    img = np.zeros((360, 640, 3), dtype=np.uint8)
+    
+    # Añadir texto
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    text = message
+    text_size = cv2.getTextSize(text, font, 0.7, 2)[0]
+    text_x = (640 - text_size[0]) // 2
+    text_y = (360 + text_size[1]) // 2
+    
+    cv2.putText(img, text, (text_x, text_y), font, 0.7, (255, 255, 255), 2)
+    
+    # Codificar a JPEG
+    _, jpeg = cv2.imencode('.jpg', img)
+    return jpeg.tobytes()
 
 @bp.route('/stream')
 @login_required
