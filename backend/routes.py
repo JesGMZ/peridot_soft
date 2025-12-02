@@ -370,7 +370,8 @@ def generate_stream(camera_url):
 
 def create_error_image(message):
     """Crear una imagen de error simple"""
-
+    import numpy as np
+    
     # Crear imagen negra
     img = np.zeros((360, 640, 3), dtype=np.uint8)
     
